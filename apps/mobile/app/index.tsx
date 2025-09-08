@@ -71,7 +71,7 @@ export default function HomeFeed() {
   }
 
   useEffect(() => { load(); }, []);
-  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false()); };
+  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
   const renderItem = ({ item }: { item: PostRec }) => (
     <View style={{ paddingHorizontal: 16, paddingVertical: 12, gap: 8 }}>
