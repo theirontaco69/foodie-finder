@@ -51,7 +51,7 @@ export default function HomeFeed() {
     if (ids.length) {
       const { data: profs } = await supabase
         .from('profiles')
-        .select('id, display_name, username, avatar_url')
+        .select('id, display_name, username, avatar_url, verified')
         .in('id', ids);
       if (profs) {
         for (const p of profs) {
@@ -60,6 +60,7 @@ export default function HomeFeed() {
             display_name: p.display_name,
             username: p.username,
             avatar_url: normalizeAvatar(p.avatar_url),
+            verified: (p as any).verified,
           };
         }
       }
