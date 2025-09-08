@@ -51,7 +51,7 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
   const finalAvatarUrl = resolveAvatarPublicUrl(supabase, avatarUrl ?? null, { userId }) ?? avatarUrl;
 
   useEffect(() => {
-    setAvatarUrl(resolveAvatar(p?.avatar_url ?? null, userId, p?.display_name ?? null, p?.username ?? null, (p as any).avatar_version));
+    setAvatarUrl(resolveAvatar(p?.avatar_url ?? null, userId, p?.display_name ?? null, p?.username ?? null, (p?.avatar_version as any)));
   }, [p?.avatar_url, userId]);
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
           };
           setProfileInCache(prof);
           setP(prof);
-          setAvatarUrl(resolveAvatar(prof.avatar_url ?? null, userId, prof.display_name ?? null, prof.username ?? null, (prof as any).avatar_version));
+          setAvatarUrl(resolveAvatar(prof.avatar_url ?? null, userId, prof.display_name ?? null, prof.username ?? null, (data as any).avatar_version));
         }
       })();
     }
