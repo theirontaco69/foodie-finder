@@ -47,6 +47,7 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
   const router = useRouter();
   const [p, setP] = useState<Profile | null>(initial ?? getProfileFromCache(userId) ?? null);
   const [avatarUrl, setAvatarUrl] = useState<string>('');
+  const finalAvatarUrl = resolveAvatarPublicUrl(supabase, avatarUrl ?? null, { userId }) ?? avatarUrl;
 
   useEffect(() => {
     setAvatarUrl(resolveAvatar(p?.avatar_url ?? null, userId, p?.display_name ?? null, p?.username ?? null, (p as any).avatar_version));
@@ -80,7 +81,7 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
   }, [userId]);
 
   useEffect(() => {
-    if (avatarUrl) console.log('AuthorHeader final avatar', userId, avatarUrl);
+    if (avatarUrl) console.log('AuthorHeader final avatar', userId, finalAvatarUrl);
   }, [avatarUrl, userId]);
 
   const name = p?.display_name || 'User';
@@ -90,7 +91,7 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
     <Pressable onPress={() => router.push(`/u/${userId}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       {avatarUrl ? (
         <ExpoImage
-          source={{ uri: avatarUrl }}
+          source={finalAvatarUrl ? { uri: finalAvatarUrl } : undefined}
           style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#eee' }}
           contentFit="cover"
           cachePolicy="memory-disk"
