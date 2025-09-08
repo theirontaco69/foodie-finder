@@ -113,7 +113,7 @@ export default function MyProfile() {
     (async () => {
       const { count: following } = await supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', meId);
       const { count: followers } = await supabase.from('follows').select('id', { count: 'exact', head: true }).eq('followee_id', meId);
-      setCounts({ following: following || 0, followers: followers || 0, likes: 0 });
+      setCounts(prev => ({ following: following || 0, followers: followers || 0, likes: prev.likes }));
     })();
   }, [meId]);
 
