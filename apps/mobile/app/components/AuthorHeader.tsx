@@ -61,7 +61,7 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
       (async () => {
         const { data } = await supabase
           .from('profiles')
-          .select('id, display_name, username, avatar_url, avatar_version, verified')
+          .select('id, display_name, username, avatar_url, avatar_version, verified:is_verified')
           .eq('id', userId)
           .maybeSingle();
         if (aborted) return;
@@ -71,6 +71,7 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
             display_name: data.display_name,
             username: data.username,
             avatar_url: data.avatar_url,
+            verified: (data as any).verified,
             verified: (data as any).verified,
           };
           setProfileInCache(prof);

@@ -47,7 +47,7 @@ export default function PublicProfile() {
   async function loadProfile(uid: string) {
     const { data } = await supabase
       .from('user_profiles')
-      .select('id,username,display_name,avatar_url,banner_url,bio,location,website,birthdate,verified')
+      .select('id,username,display_name,avatar_url,banner_url,bio,location,website,birthdate,verified:is_verified')
       .eq('id', uid)
       .maybeSingle();
     setProfile(data as any);

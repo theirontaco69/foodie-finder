@@ -51,7 +51,7 @@ export default function HomeFeed() {
     if (ids.length) {
       const { data: profs } = await supabase
         .from('profiles')
-        .select('id, display_name, username, avatar_url, verified')
+        .select('id, display_name, username, avatar_url, verified:is_verified')
         .in('id', ids);
       if (profs) {
         for (const p of profs) {
