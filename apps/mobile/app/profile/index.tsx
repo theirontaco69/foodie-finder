@@ -130,7 +130,24 @@ export default function MyProfile() {
     })();
   }, [meId]);
 
-  const mediaTypesImages = useMemo(() => {
+  
+async function getLikesReceived(userId:string){
+  const idsRes = await supabase.from('posts').select('id').eq('author_id', userId).limit(1000);
+  const ids = (idsRes.data||[]).map(x=>x.id);
+  if (ids.length===0) return 0;
+  const { count } = await supabase.from('post_likes').select('id', { count:'exact', head:true }).in('post_id', ids);
+  return count||0;
+}
+
+useEffect(() => {
+  if (!meId) return;
+  (async () => {
+    const likes = await getLikesReceived(meId);
+    setCounts(prev => ({ ...prev, likes }));
+  })();
+}, [meId]);
+
+const mediaTypesImages = useMemo(() => {
     const anyPicker: any = ImagePicker;
     if (anyPicker?.MediaType?.Image) return [anyPicker.MediaType.Image];
     if (anyPicker?.MediaTypeOptions?.Images) return anyPicker.MediaTypeOptions.Images;
