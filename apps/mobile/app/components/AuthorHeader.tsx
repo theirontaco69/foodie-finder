@@ -4,6 +4,9 @@ import { Image as ExpoImage } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { getProfileFromCache, setProfileInCache, type Profile } from '../../lib/profileCache';
+import { resolveAvatarPublicUrl, fallbackAvatar } from "../../lib/avatar";
+import { supabase } from "../../lib/supabase";
+
 
 function resolveAvatar(u: string | null | undefined, userId: string): string {
   if (!u) return '';
@@ -47,7 +50,7 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
   const [avatarUrl, setAvatarUrl] = useState<string>('');
 
   useEffect(() => {
-    setAvatarUrl(resolveAvatar(p?.avatar_url || '', userId));
+    setAvatarUrl(resolveAvatar(p?.avatar_url ?? null, userId, p?.display_name ?? null, p?.username ?? null, (p as any).avatar_version));
   }, [p?.avatar_url, userId]);
 
   useEffect(() => {
@@ -57,7 +60,7 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
       (async () => {
         const { data } = await supabase
           .from('profiles')
-          .select('id, display_name, username, avatar_url')
+          .select('id, display_name, username, avatar_url, avatar_version')
           .eq('id', userId)
           .maybeSingle();
         if (aborted) return;
@@ -70,7 +73,7 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
           };
           setProfileInCache(prof);
           setP(prof);
-          setAvatarUrl(resolveAvatar(prof.avatar_url || '', userId));
+          setAvatarUrl(resolveAvatar(prof.avatar_url ?? null, userId, prof.display_name ?? null, prof.username ?? null, (prof as any).avatar_version));
         }
       })();
     }
