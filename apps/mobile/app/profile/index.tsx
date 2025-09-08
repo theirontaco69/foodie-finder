@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, TextInput, Modal, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Image as ExpoImage } from 'expo-image';
@@ -46,6 +47,7 @@ function abbreviate(n: number) {
 }
 
 export default function MyProfile() {
+  const router = useRouter();
   const [meId, setMeId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,6 +83,17 @@ export default function MyProfile() {
         .single();
       if (!error && data) setProfile(data as Profile);
       setLoading(false);
+    })();
+  }, [meId]);
+
+  useEffect(() => {
+    if (!meId) return;
+    (async () => {
+      const { count } = await supabase
+        .from('post_likes')
+        .select('id,posts!inner(author_id)', { count: 'exact', head: true })
+        .eq('posts.author_id', meId);
+      setCounts(prev => ({ ...prev, likes: count || 0 }));
     })();
   }, [meId]);
 
@@ -265,9 +278,15 @@ export default function MyProfile() {
           </View>
 
           <View style={{ flexDirection: 'row', gap: 16, marginTop: 10 }}>
+            <Pressable onPress={() => router.push('/profile/following')}>
             <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.following)}</Text> Following</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push('/profile/followers')}>
             <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.followers)}</Text> Followers</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push('/profile/likes')}>
             <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.likes)}</Text> Likes</Text>
+          </Pressable>
           </View>
 
           <View style={{ height: 16 }} />
