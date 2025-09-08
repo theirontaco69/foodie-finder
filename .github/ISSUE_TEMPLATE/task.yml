@@ -1,0 +1,23 @@
+name: "🧰 Task"
+description: A concrete implementation task
+labels: [task]
+title: "[Task] <component>: <verb + object>"
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps
+      placeholder: |
+        - [ ] Create migration ...
+        - [ ] Implement Edge function ...
+        - [ ] Add unit tests ...
+    validations:
+      required: true
+  - type: textarea
+    id: dod
+    attributes:
+      label: Definition of Done
+      placeholder: |
+        - [ ] CI green (unit + lint)
+        - [ ] Deployed to staging
+        - [ ] Screenshots attached

@@ -1,0 +1,26 @@
+name: "✨ Feature Request"
+description: Propose a new capability or user story
+labels: [feature]
+title: "[Feature] <concise title>"
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      placeholder: As a diner/owner, I want ... so that ...
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [iOS, Edge Functions, Owner Portal, Database, Analytics]

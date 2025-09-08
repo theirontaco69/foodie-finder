@@ -1,0 +1,33 @@
+name: "🐞 Bug Report"
+description: Report a reproducible issue
+labels: [bug]
+title: "[Bug] <area>: <symptom>"
+body:
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      placeholder: iOS 17.x / build 1.0.0 (10) / Wi‑Fi / staging
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options: [S1‑Blocker, S2‑Major, S3‑Minor]
