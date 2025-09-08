@@ -56,7 +56,7 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
 
   useEffect(() => {
     let aborted = false;
-    const needsFetch = !p || p.display_name == null || p.username == null || !p.avatar_url;
+    const needsFetch = !p || p.display_name == null || p.username == null || !p.avatar_url || p.verified == null;
     if (needsFetch && userId) {
       (async () => {
         const { data } = await supabase
