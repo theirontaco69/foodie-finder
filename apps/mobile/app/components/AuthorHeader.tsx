@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
+import VerifiedBadge from "./VerifiedBadge";
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { getProfileFromCache, setProfileInCache, type Profile } from '../../lib/profileCache';
@@ -60,7 +61,7 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
       (async () => {
         const { data } = await supabase
           .from('profiles')
-          .select('id, display_name, username, avatar_url, avatar_version')
+          .select('id, display_name, username, avatar_url, avatar_version, verified')
           .eq('id', userId)
           .maybeSingle();
         if (aborted) return;
@@ -70,6 +71,7 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
             display_name: data.display_name,
             username: data.username,
             avatar_url: data.avatar_url,
+            verified: (data as any).verified,
           };
           setProfileInCache(prof);
           setP(prof);
@@ -101,7 +103,10 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
         <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#eee' }} />
       )}
       <View>
-        <Text style={{ fontWeight: '600' }}>{name}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={{ fontWeight: '600' }}>{name}</Text>
+          {p?.verified ? <VerifiedBadge size={14} /> : null}
+        </View>
         <Text style={{ color: '#666', fontSize: 12 }}>{username}</Text>
       </View>
     </Pressable>
