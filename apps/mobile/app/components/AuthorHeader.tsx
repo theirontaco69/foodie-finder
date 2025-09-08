@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { getProfileFromCache, setProfileInCache, type Profile } from '../../lib/profileCache';
 import { resolveAvatarPublicUrl, fallbackAvatar } from "../../lib/avatar";
-import { supabase } from "../../lib/supabase";
 
 
 function resolveAvatar(u: string | null | undefined, userId: string): string {
