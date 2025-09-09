@@ -341,7 +341,7 @@ const mediaTypesImages = useMemo(() => {
             <Text style={{ color: '#666' }}>No posts yet.</Text>
           ) : (
             <View style={{ gap: 12 }}>
-              {posts.map((p) => (
+              {activeTab==='Posts' && posts.map((p) => (
                 <View key={p.id} style={{ borderWidth: 1, borderColor: '#eee', borderRadius: 12, padding: 12 }}>
                   <View style={{ gap: 8 }}>
                     {p.is_video
