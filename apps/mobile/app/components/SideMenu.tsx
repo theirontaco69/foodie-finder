@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
@@ -25,25 +26,21 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   const [counts,setCounts]=useState({following:0,followers:0,likes:0});
   const [loading,setLoading]=useState(true);
 
-  useEffect(()=>{(async()=>{const a=await supabase.auth.getUser(); setMeId(a?.data?.user?.id??null);})();},[]);
-  useEffect(()=>{ const sub=supabase.auth.onAuthStateChange((_e,session)=>{ setMeId(session?.user?.id??null); }); return ()=>sub.data.subscription.unsubscribe(); },[]);
+  useEffect(()=>{(async()=>{const s=await supabase.auth.getSession(); setMeId(s.data.session?.user?.id??null); setLoading(false);})();},[]);
+  useEffect(()=>{ const sub=supabase.auth.onAuthStateChange((_e,session)=>{ setMeId(session?.user?.id??null); }); return ()=>{ sub.data.subscription.unsubscribe(); }; },[]);
 
-  useEffect(()=>{ 
-    if(!meId){ setP(null); setCounts({following:0,followers:0,likes:0}); setLoading(false); return; }
-    (async()=>{
-      setLoading(true);
-      const r=await supabase.from('profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified:is_verified,created_at,avatar_version').eq('id',meId).maybeSingle();
-      if(r.data) setP(r.data as any);
-      const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',meId);
-      const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',meId);
-      let t=0; try{ const rpc=await supabase.rpc('total_likes_received',{author:meId}); t=Number(rpc.data??0);}catch(e){ t=0; }
-      setCounts({following:a.count||0,followers:b.count||0,likes:t});
-      setLoading(false);
-    })();
-  },[meId]);
+  useEffect(()=>{ if(!meId){ setP(null); setCounts({following:0,followers:0,likes:0}); return; } (async()=>{ setLoading(true);
+    const r=await supabase.from('user_profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version').eq('id',meId).maybeSingle();
+    if(r.data) setP(r.data as any);
+    const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',meId);
+    const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',meId);
+    const t=await supabase.rpc('total_likes_received',{author:meId});
+    setCounts({following:a.count||0,followers:b.count||0,likes:Number(t.data??0)});
+    setLoading(false);
+  })(); },[meId,open]);
 
   function nav(path:string){ onClose(); router.push(path as any); }
-  async function logout(){ await supabase.auth.signOut(); onClose(); router.replace('/'); }
+  async function logout(){ await supabase.auth.signOut(); onClose(); router.replace('/login'); }
 
   const avatar=resolveAvatarPublicUrl(supabase, p?.avatar_url??null, { userId: p?.id??undefined, version: p?.avatar_version??undefined }) ?? (p?.display_name||p?.username ? fallbackAvatar(p?.display_name||p?.username) : null);
 

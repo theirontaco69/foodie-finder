@@ -57,7 +57,7 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
     if (needsFetch && userId) {
       (async () => {
         const { data } = await supabase
-          .from('profiles')
+          .from('user_profiles')
           .select('id, display_name, username, avatar_url, avatar_version, verified:is_verified')
           .eq('id', userId)
           .maybeSingle();
