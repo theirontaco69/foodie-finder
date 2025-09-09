@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Image as ExpoImage } from 'expo-image';
 import { supabase } from '../../lib/supabase';
 import VerifiedBadge from '../components/VerifiedBadge';
+import ProfileTabs from '../components/ProfileTabs';
 import TopBar from '../components/TopBar';
 import NavBar from '../components/NavBar';
 
@@ -320,8 +321,10 @@ const mediaTypesImages = useMemo(() => {
             <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.likes)}</Text> Likes</Text>
           </Pressable>
         <View style={{ height: 12 }} />
+        <ProfileTabs tabs={['Posts','Videos','Reposts','Reviews','Tags','Likes']} active={activeTab} onChange={(t)=> t==='Likes' ? router.push('/profile/likes') : setActiveTab(t as any)} />
+        <View style={{ height: 12 }} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 20 }} style={{ paddingTop: 8, borderBottomWidth: 1, borderColor: '#eee' }}>
-  <Pressable onPress={() => setActiveTab('Posts')}><Text style={{ fontWeight: activeTab==='Posts' ? '700' : '500', borderBottomWidth: activeTab==='Posts' ? 2 : 0 }}>Posts</Text></Pressable>
+  <Pressable onPress={() => setActiveTab('Posts')}><Text style={{ fontWeight: activeTab==='Posts' ? '700' : '500', borderBottomWidth: activeTab==='Posts' ? 2 : 0 }}>{activeTab}</Text></Pressable>
   <Pressable onPress={() => setActiveTab('Videos')}><Text style={{ fontWeight: activeTab==='Videos' ? '700' : '500', borderBottomWidth: activeTab==='Videos' ? 2 : 0 }}>Videos</Text></Pressable>
   <Pressable onPress={() => setActiveTab('Reposts')}><Text style={{ fontWeight: activeTab==='Reposts' ? '700' : '500', borderBottomWidth: activeTab==='Reposts' ? 2 : 0 }}>Reposts</Text></Pressable>
   <Pressable onPress={() => setActiveTab('Reviews')}><Text style={{ fontWeight: activeTab==='Reviews' ? '700' : '500', borderBottomWidth: activeTab==='Reviews' ? 2 : 0 }}>Reviews</Text></Pressable>
