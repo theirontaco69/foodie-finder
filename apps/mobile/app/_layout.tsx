@@ -39,12 +39,25 @@ export default function RootLayout() {
       <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 18, zIndex: 20 }} {...edge.panHandlers} />
       <Slot />
       <Animated.View
-        pointerEvents={backdrop.interpolate({ inputRange: [0,1], outputRange: ['none','auto'] })}
-        style={{ position: 'absolute', inset: 0, backgroundColor: '#000', opacity: backdrop.interpolate({ inputRange: [0,1], outputRange: [0,0.35] }) }}
+        pointerEvents={open ? 'auto' : 'none'}
+        style={{
+          position: 'absolute',
+          left: 0, right: 0, top: 0, bottom: 0,
+          backgroundColor: '#000',
+          opacity: backdrop.interpolate({ inputRange: [0,1], outputRange: [0,0.35] })
+        }}
       >
         <Pressable onPress={close} style={{ flex: 1 }} />
       </Animated.View>
-      <Animated.View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: panel, transform: [{ translateX: tx }], backgroundColor: '#fff' }}>
+      <Animated.View
+        style={{
+          position: 'absolute',
+          left: 0, top: 0, bottom: 0,
+          width: panel,
+          transform: [{ translateX: tx }],
+          backgroundColor: '#fff'
+        }}
+      >
         <SideMenu open={open} onClose={close} />
       </Animated.View>
     </View>
