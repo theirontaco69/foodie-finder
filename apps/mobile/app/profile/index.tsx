@@ -313,14 +313,23 @@ const mediaTypesImages = useMemo(() => {
 
           <View style={{ flexDirection: 'row', gap: 16, marginTop: 10 }}>
             <Pressable onPress={() => router.push('/profile/following')}>
-            <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.following)}</Text> Following</Text>
-          </Pressable>
-          <Pressable onPress={() => router.push('/profile/followers')}>
-            <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.followers)}</Text> Followers</Text>
-          </Pressable>
-          <Pressable onPress={() => router.push('/profile/likes')}>
-            <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.likes)}</Text> Likes</Text>
-          </Pressable>
+              <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.following)}</Text> Following</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/profile/followers')}>
+              <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.followers)}</Text> Followers</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/profile/likes')}>
+              <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.likes)}</Text> Likes</Text>
+            </Pressable>
+          </View>
+          <View style={{ height: 6 }} />
+          <View style={{ paddingHorizontal: 16 }}>
+            <ProfileTabs
+              tabs={['Posts','Videos','Reposts','Reviews','Tags','Likes']}
+              active={activeTab}
+              onChange={(t)=> t==='Likes' ? router.push('/profile/likes') : setActiveTab(t as any)}
+            />
+          </View>
         <View style={{ height: 12 }} />
         <View style={{ paddingHorizontal: 16 }}><View style={{ paddingHorizontal: 16 }}><ProfileTabs tabs={['Posts','Videos','Reposts','Reviews','Tags','Likes']} active={activeTab} onChange={(t)=> t==='Likes' ? router.push('/profile/likes') : setActiveTab(t)} /></View></View>
         <View style={{ height: 12 }} />
@@ -341,7 +350,7 @@ const mediaTypesImages = useMemo(() => {
             <Text style={{ color: '#666' }}>No posts yet.</Text>
           ) : (
             <View style={{ gap: 12 }}>
-              {activeTab==='Posts' && posts.map((p) => (
+              {posts.map((p) => (
                 <View key={p.id} style={{ borderWidth: 1, borderColor: '#eee', borderRadius: 12, padding: 12 }}>
                   <View style={{ gap: 8 }}>
                     {p.is_video
