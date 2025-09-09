@@ -25,9 +25,21 @@ export default function PublicProfile() {
     if (!id) return;
     (async () => {
       setLoading(true);
-      const r = await supabase.from('profiles')
-  .select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified:is_verified,created_at,avatar_version')
-  .eq('id', meId).maybeSingle();
+      const r1 = await supabase
+        .from('user_profiles')
+        .select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version')
+        .eq('id', id)
+        .maybeSingle();
+      if (r1.data) {
+        setProfile({ ...(r1.data as any), verified: (r1.data as any).verified ?? null } as any);
+      } else {
+        const r2 = await supabase
+          .from('profiles')
+          .select('id,username,display_name,avatar_url,banner_url,bio,verified:is_verified,created_at,avatar_version')
+          .eq('id', id)
+          .maybeSingle();
+        if (r2.data) setProfile({ ...(r2.data as any), location: null, website: null } as any);
+      }
 if (r.data) {
   setProfile(r.data as any);
 } else {
