@@ -64,7 +64,16 @@ export default function MyProfile() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'Posts'|'Videos'|'Reposts'|'Reviews'|'Tags'|'Likes'>('Posts');
 
-  useEffect(() => { (async () => { const { data } = await supabase.auth.getUser(); setMeId(data?.user?.id ?? null); })(); }, []);
+  useEffect(() => { (async () => {
+    const a = await supabase.auth.getUser();
+    let id = a?.data?.user?.id ?? null;
+    if (!id) {
+      const b = await supabase.auth.getSession();
+      id = b?.data?.session?.user?.id ?? null;
+    }
+    setMeId(id);
+    if (!id) setLoading(false);
+  })(); }, []);
 
   useEffect(() => {
     if (!meId) return;
@@ -127,13 +136,13 @@ export default function MyProfile() {
   async function pickAvatar() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) { Alert.alert('Permission required'); return; }
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: mediaTypesImages, allowsEditing: true, aspect: [1, 1], quality: 0.9 });
+    const res = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.9 });
     if (!res.canceled && res.assets?.[0]?.uri) setLocalAvatar(res.assets[0].uri);
   }
   async function pickBanner() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) { Alert.alert('Permission required'); return; }
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: mediaTypesImages, allowsEditing: true, aspect: [3, 1], quality: 0.9 });
+    const res = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [3, 1], quality: 0.9 });
     if (!res.canceled && res.assets?.[0]?.uri) setLocalBanner(res.assets[0].uri);
   }
   async function uploadPublic(uri: string, prefix: 'avatars'|'banners') {
