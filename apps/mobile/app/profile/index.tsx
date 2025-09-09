@@ -32,6 +32,12 @@ type Post = {
   created_at: string;
 };
 
+async function getTotalLikes(userId:string){
+  const r=await supabase.from('posts').select('likes_count').eq('author_id',userId).limit(1000);
+  if(r.data&&Array.isArray(r.data)){return r.data.reduce((a,x)=>a+(x.likes_count||0),0);}
+  const j=await supabase.from('post_likes').select('id,posts!inner(author_id)',{count:'exact',head:true}).eq('posts.author_id',userId);
+  return j.count||0;
+}
 function formatJoined(dateIso?: string | null) {
   if (!dateIso) return '';
   const d = new Date(dateIso);
