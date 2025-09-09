@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useState } from 'react';
 import { View, Text, Image, Pressable, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -14,7 +15,6 @@ type Profile = {
 };
 type Post = { id: string; author_id: string; is_video: boolean; media_urls: string[]; caption: string|null; created_at: string };
 
-import React, { useState } from 'react';
 export default function PublicProfile() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();

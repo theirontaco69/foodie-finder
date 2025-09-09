@@ -320,14 +320,14 @@ const mediaTypesImages = useMemo(() => {
             <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.likes)}</Text> Likes</Text>
           </Pressable>
         <View style={{ height: 12 }} />
-        <View style={{ flexDirection: 'row', gap: 20, paddingHorizontal: 16, paddingTop: 8, borderBottomWidth: 1, borderColor: '#eee' }}>
-          <Pressable onPress={() => setActiveTab('Posts')}><Text style={{ fontWeight: activeTab==='Posts' ? '700' : '500' }}>Posts</Text></Pressable>
-          <Pressable onPress={() => setActiveTab('Videos')}><Text style={{ fontWeight: activeTab==='Videos' ? '700' : '500' }}>Videos</Text></Pressable>
-          <Pressable onPress={() => setActiveTab('Reposts')}><Text style={{ fontWeight: activeTab==='Reposts' ? '700' : '500' }}>Reposts</Text></Pressable>
-          <Pressable onPress={() => setActiveTab('Reviews')}><Text style={{ fontWeight: activeTab==='Reviews' ? '700' : '500' }}>Reviews</Text></Pressable>
-          <Pressable onPress={() => setActiveTab('Tags')}><Text style={{ fontWeight: activeTab==='Tags' ? '700' : '500' }}>Tags</Text></Pressable>
-          <Pressable onPress={() => setActiveTab('Likes')}><Text style={{ fontWeight: activeTab==='Likes' ? '700' : '500' }}>Likes</Text></Pressable>
-        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 20 }} style={{ paddingTop: 8, borderBottomWidth: 1, borderColor: '#eee' }}>
+  <Pressable onPress={() => setActiveTab('Posts')}><Text style={{ fontWeight: activeTab==='Posts' ? '700' : '500', borderBottomWidth: activeTab==='Posts' ? 2 : 0 }}>Posts</Text></Pressable>
+  <Pressable onPress={() => setActiveTab('Videos')}><Text style={{ fontWeight: activeTab==='Videos' ? '700' : '500', borderBottomWidth: activeTab==='Videos' ? 2 : 0 }}>Videos</Text></Pressable>
+  <Pressable onPress={() => setActiveTab('Reposts')}><Text style={{ fontWeight: activeTab==='Reposts' ? '700' : '500', borderBottomWidth: activeTab==='Reposts' ? 2 : 0 }}>Reposts</Text></Pressable>
+  <Pressable onPress={() => setActiveTab('Reviews')}><Text style={{ fontWeight: activeTab==='Reviews' ? '700' : '500', borderBottomWidth: activeTab==='Reviews' ? 2 : 0 }}>Reviews</Text></Pressable>
+  <Pressable onPress={() => setActiveTab('Tags')}><Text style={{ fontWeight: activeTab==='Tags' ? '700' : '500', borderBottomWidth: activeTab==='Tags' ? 2 : 0 }}>Tags</Text></Pressable>
+  <Pressable onPress={() => setActiveTab('Likes')}><Text style={{ fontWeight: activeTab==='Likes' ? '700' : '500', borderBottomWidth: activeTab==='Likes' ? 2 : 0 }}>Likes</Text></Pressable>
+</ScrollView>
           </View>
 
           <View style={{ height: 16 }} />
