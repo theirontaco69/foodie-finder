@@ -40,11 +40,26 @@ function formatJoined(dateIso?: string | null) {
 
 function abbreviate(n: number) {
   if (n < 1000) return String(n);
-  if (n < 10000) return (Math.round(n / 100) / 10).toFixed(1).replace(/\.0$/, '') + 'K';
+  if (n < 10000) return (Math.round(n / 100) / 10).toFixed(1).replace(/.0$/, '') + 'K';
   if (n < 1_000_000) return Math.round(n / 1000) + 'K';
-  if (n < 10_000_000) return (Math.round(n / 100_000) / 10).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n < 10_000_000) return (Math.round(n / 100_000) / 10).toFixed(1).replace(/.0$/, '') + 'M';
   if (n < 1_000_000_000) return Math.round(n / 1_000_000) + 'M';
   return '1B+';
+}
+
+function Field(props: any) {
+  return (
+    <View>
+      <Text style={{ fontSize: 13, color: '#666', marginBottom: 6 }}>{props.label}</Text>
+      <TextInput
+        {...props}
+        style={[
+          { borderWidth: 1, borderColor: '#ddd', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, backgroundColor: '#fff' },
+          props.multiline ? { height: 100, textAlignVertical: 'top' } : null
+        ]}
+      />
+    </View>
+  );
 }
 
 export default function MyProfile() {
@@ -54,7 +69,6 @@ export default function MyProfile() {
   const [loading, setLoading] = useState(true);
   const [counts, setCounts] = useState({ following: 0, followers: 0, likes: 0 });
   const [posts, setPosts] = useState<Post[]>([]);
-
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
@@ -113,9 +127,9 @@ export default function MyProfile() {
   useEffect(() => {
     if (!meId) return;
     (async () => {
-      const { count: following } = await supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', meId);
-      const { count: followers } = await supabase.from('follows').select('id', { count: 'exact', head: true }).eq('followee_id', meId);
-      setCounts(prev => ({ following: following || 0, followers: followers || 0, likes: prev.likes }));
+      const a = await supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', meId);
+      const b = await supabase.from('follows').select('id', { count: 'exact', head: true }).eq('followee_id', meId);
+      setCounts(prev => ({ following: a.count || 0, followers: b.count || 0, likes: prev.likes }));
     })();
   }, [meId]);
 
@@ -132,38 +146,7 @@ export default function MyProfile() {
     })();
   }, [meId]);
 
-  
-async function getLikesReceived(userId:string){
-  const idsRes = await supabase.from('posts').select('id').eq('author_id', userId).limit(1000);
-  const ids = (idsRes.data||[]).map(x=>x.id);
-  if (ids.length===0) return 0;
-  const { count } = await supabase.from('post_likes').select('id', { count:'exact', head:true }).in('post_id', ids);
-  return count||0;
-}
-
-useEffect(() => {
-  if (!meId) return;
-  (async () => {
-    const likes = await getLikesReceived(meId);
-    setCounts(prev => ({ ...prev, likes }));
-  })();
-}, [meId]);
-
-
-async function sumLikesCount(userId:string){
-  const r = await supabase.from('posts').select('likes_count').eq('author_id', userId).limit(1000);
-  const likes = (r.data||[]).reduce((a,x)=>a + (x.likes_count||0), 0);
-  return likes;
-}
-useEffect(() => {
-  if (!meId) return;
-  (async () => {
-    const likes = await sumLikesCount(meId);
-    setCounts(prev => ({ ...prev, likes }));
-  })();
-}, [meId, posts.length]);
-
-const mediaTypesImages = useMemo(() => {
+  const mediaTypesImages = useMemo(() => {
     const anyPicker: any = ImagePicker;
     if (anyPicker?.MediaType?.Image) return [anyPicker.MediaType.Image];
     if (anyPicker?.MediaTypeOptions?.Images) return anyPicker.MediaTypeOptions.Images;
@@ -202,7 +185,6 @@ const mediaTypesImages = useMemo(() => {
       let banner_url = profile?.banner_url || null;
       if (localAvatar) avatar_url = await uploadPublic(localAvatar, 'avatars');
       if (localBanner) banner_url = await uploadPublic(localBanner, 'banners');
-
       const upd: Partial<Profile> = {
         display_name: name || null,
         username: username || null,
@@ -235,8 +217,7 @@ const mediaTypesImages = useMemo(() => {
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator />
         </View>
-        )}
-<NavBar />
+        <NavBar />
       </View>
     );
   }
@@ -256,7 +237,6 @@ const mediaTypesImages = useMemo(() => {
   return (
     <View style={{ flex: 1, paddingBottom: 96 }}>
       <TopBar />
-
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
         <View style={{ width: '100%', aspectRatio: 3, backgroundColor: '#e9ecef' }}>
           <ExpoImage
@@ -313,61 +293,71 @@ const mediaTypesImages = useMemo(() => {
 
           <View style={{ flexDirection: 'row', gap: 16, marginTop: 10 }}>
             <Pressable onPress={() => router.push('/profile/following')}>
-            <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.following)}</Text> Following</Text>
-          </Pressable>
-          <Pressable onPress={() => router.push('/profile/followers')}>
-            <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.followers)}</Text> Followers</Text>
-          </Pressable>
-          <Pressable onPress={() => router.push('/profile/likes')}>
-            <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.likes)}</Text> Likes</Text>
-          </Pressable>
-        <View style={{ height: 12 }} />
-        <View style={{ paddingHorizontal: 16 }}><View style={{ paddingHorizontal: 16 }}><ProfileTabs tabs={['Posts','Videos','Reposts','Reviews','Tags','Likes']} active={activeTab} onChange={(t)=> t==='Likes' ? router.push('/profile/likes') : setActiveTab(t)} /></View></View>
-        <View style={{ height: 12 }} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 20 }} style={{ paddingTop: 8, borderBottomWidth: 1, borderColor: '#eee' }}>
-  <Pressable onPress={() => setActiveTab('Posts')}><Text style={{ fontWeight: activeTab==='Posts' ? '700' : '500', borderBottomWidth: activeTab==='Posts' ? 2 : 0 }}>{activeTab}</Text></Pressable>
-  <Pressable onPress={() => setActiveTab('Videos')}><Text style={{ fontWeight: activeTab==='Videos' ? '700' : '500', borderBottomWidth: activeTab==='Videos' ? 2 : 0 }}>Videos</Text></Pressable>
-  <Pressable onPress={() => setActiveTab('Reposts')}><Text style={{ fontWeight: activeTab==='Reposts' ? '700' : '500', borderBottomWidth: activeTab==='Reposts' ? 2 : 0 }}>Reposts</Text></Pressable>
-  <Pressable onPress={() => setActiveTab('Reviews')}><Text style={{ fontWeight: activeTab==='Reviews' ? '700' : '500', borderBottomWidth: activeTab==='Reviews' ? 2 : 0 }}>Reviews</Text></Pressable>
-  <Pressable onPress={() => setActiveTab('Tags')}><Text style={{ fontWeight: activeTab==='Tags' ? '700' : '500', borderBottomWidth: activeTab==='Tags' ? 2 : 0 }}>Tags</Text></Pressable>
-  <Pressable onPress={() => setActiveTab('Likes')}><Text style={{ fontWeight: activeTab==='Likes' ? '700' : '500', borderBottomWidth: activeTab==='Likes' ? 2 : 0 }}>Likes</Text></Pressable>
-</ScrollView>
+              <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.following)}</Text> Following</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/profile/followers')}>
+              <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.followers)}</Text> Followers</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/profile/likes')}>
+              <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.likes)}</Text> Likes</Text>
+            </Pressable>
           </View>
+        </View>
 
-          <View style={{ height: 16 }} />
+        <View style={{ height: 12 }} />
 
-          <Text style={{ fontSize: 16, fontWeight: '700', marginBottom: 8 }}>Posts</Text>
-          {posts.length === 0 ? (
-            <Text style={{ color: '#666' }}>No posts yet.</Text>
-          ) : (
+        <View style={{ paddingHorizontal: 16 }}>
+          <ProfileTabs
+            tabs={['Posts','Videos','Reposts','Reviews','Tags','Likes']}
+            active={activeTab}
+            onChange={(t)=> t==='Likes' ? router.push('/profile/likes') : setActiveTab(t as any)}
+          />
+        </View>
+
+        <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
+          {activeTab === 'Posts' && (
+            posts.length === 0 ? <Text style={{ color: '#666' }}>No posts yet.</Text> :
             <View style={{ gap: 12 }}>
-              {activeTab==='Posts' && posts.map((p) => (
+              {posts.map((p) => (
                 <View key={p.id} style={{ borderWidth: 1, borderColor: '#eee', borderRadius: 12, padding: 12 }}>
                   <View style={{ gap: 8 }}>
-                    {p.is_video
-                      ? p.media_urls.map((u, i) => (
-                          <ExpoImage
-                            key={i}
-                            source={{ uri: u }}
-                            style={{ width: '100%', height: 320, borderRadius: 8, backgroundColor: '#eee' }}
-                            contentFit="cover"
-                          />
-                        ))
-                      : p.media_urls.map((u, i) => (
-                          <ExpoImage
-                            key={i}
-                            source={{ uri: u }}
-                            style={{ width: '100%', height: 320, borderRadius: 8, backgroundColor: '#eee' }}
-                            contentFit="cover"
-                          />
-                        ))
-                    }
+                    {p.media_urls.map((u, i) => (
+                      <ExpoImage
+                        key={i}
+                        source={{ uri: u }}
+                        style={{ width: '100%', height: 320, borderRadius: 8, backgroundColor: '#eee' }}
+                        contentFit="cover"
+                      />
+                    ))}
                   </View>
                   {p.caption ? <Text style={{ marginTop: 8 }}>{p.caption}</Text> : null}
                 </View>
               ))}
             </View>
           )}
+          {activeTab === 'Videos' && (
+            posts.filter(p=>p.is_video).length === 0 ? <Text style={{ color: '#666' }}>No videos yet.</Text> :
+            <View style={{ gap: 12 }}>
+              {posts.filter(p=>p.is_video).map((p) => (
+                <View key={p.id} style={{ borderWidth: 1, borderColor: '#eee', borderRadius: 12, padding: 12 }}>
+                  <View style={{ gap: 8 }}>
+                    {p.media_urls.map((u, i) => (
+                      <ExpoImage
+                        key={i}
+                        source={{ uri: u }}
+                        style={{ width: '100%', height: 320, borderRadius: 8, backgroundColor: '#eee' }}
+                        contentFit="cover"
+                      />
+                    ))}
+                  </View>
+                  {p.caption ? <Text style={{ marginTop: 8 }}>{p.caption}</Text> : null}
+                </View>
+              ))}
+            </View>
+          )}
+          {activeTab === 'Reposts' && <Text style={{ color: '#666' }}>No reposts yet.</Text>}
+          {activeTab === 'Reviews' && <Text style={{ color: '#666' }}>No reviews yet.</Text>}
+          {activeTab === 'Tags' && <Text style={{ color: '#666' }}>No tagged posts yet.</Text>}
         </View>
       </ScrollView>
 
@@ -377,9 +367,7 @@ const mediaTypesImages = useMemo(() => {
             <View style={{ height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12 }}>
               <Pressable onPress={() => setEditing(false)}><Text style={{ color: '#06f', fontWeight: '600' }}>Cancel</Text></Pressable>
               <Text style={{ fontSize: 17, fontWeight: '700' }}>Edit profile</Text>
-              <Pressable disabled={saving} onPress={save}>
-                <Text style={{ color: saving ? '#aaa' : '#06f', fontWeight: '700' }}>{saving ? 'Saving…' : 'Save'}</Text>
-              </Pressable>
+              <Pressable disabled={saving} onPress={save}><Text style={{ color: saving ? '#aaa' : '#06f', fontWeight: '700' }}>{saving ? 'Saving…' : 'Save'}</Text></Pressable>
             </View>
           </View>
 
@@ -408,21 +396,6 @@ const mediaTypesImages = useMemo(() => {
       </Modal>
 
       <NavBar />
-    </View>
-  );
-}
-
-function Field(props: any) {
-  return (
-    <View>
-      <Text style={{ fontSize: 13, color: '#666', marginBottom: 6 }}>{props.label}</Text>
-      <TextInput
-        {...props}
-        style={[
-          { borderWidth: 1, borderColor: '#ddd', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, backgroundColor: '#fff' },
-          props.multiline ? { height: 100, textAlignVertical: 'top' } : null
-        ]}
-      />
     </View>
   );
 }
