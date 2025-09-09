@@ -1,92 +1,54 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Pressable, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView, View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
 
 export default function Login() {
-  const router=useRouter();
+  const router = useRouter();
   const [email,setEmail]=useState('');
-  const [sending,setSending]=useState(false);
-  const [loading,setLoading]=useState(true);
-  const [me,setMe]=useState<{id:string; email:string|null} | null>(null);
+  const [password,setPassword]=useState('');
+  const [loading,setLoading]=useState(false);
+  const [session,setSession]=useState(null);
 
-  useEffect(()=>{(async()=>{ const a=await supabase.auth.getUser(); setMe(a?.data?.user ? { id:a.data.user.id, email:a.data.user.email??null } : null); setLoading(false); })();},[]);
+  useEffect(()=>{ (async()=>{ const s=await supabase.auth.getSession(); setSession(s.data.session||null); })(); 
+    const sub=supabase.auth.onAuthStateChange((_e,s)=>{ setSession(s?.session||null); if(s?.session) router.replace('/'); });
+    return ()=>sub.data.subscription.unsubscribe();
+  },[]);
 
-  async function sendMagic() {
-    if(!email) return;
-    setSending(true);
-    try{
-      const { error } = await supabase.auth.signInWithOtp({ email, options:{ emailRedirectTo: '' } });
-      if(error) throw error;
-      Alert.alert('Check your email','We sent you a sign-in link.');
-    }catch(e:any){
-      Alert.alert('Sign-in error', e?.message || 'Failed to send link');
-    }finally{ setSending(false); }
-  }
+  async function signIn(){ setLoading(true); try{ await supabase.auth.signInWithPassword({ email, password }); } finally{ setLoading(false); } }
+  async function signUp(){ setLoading(true); try{ await supabase.auth.signUp({ email, password }); } finally{ setLoading(false); } }
+  async function logOut(){ await supabase.auth.signOut(); }
 
-  async function logout() {
-    await supabase.auth.signOut();
-    const a=await supabase.auth.getUser();
-    setMe(a?.data?.user ? { id:a.data.user.id, email:a.data.user.email??null } : null);
-  }
-
-  if(loading){
+  if(session){
     return (
-      <View style={{ flex:1, paddingTop: 52, alignItems:'center', justifyContent:'center' }}>
-        <ActivityIndicator />
-      </View>
-    );
-  }
-
-  if(me){
-    return (
-      <View style={{ flex:1, paddingTop: 52, paddingHorizontal:16 }}>
-        <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-          <Pressable onPress={()=>router.back()} style={{ padding:6 }}>
-            <Ionicons name="chevron-back" size={24} color="#111" />
-          </Pressable>
-          <Text style={{ fontSize:18, fontWeight:'700' }}>Account</Text>
-          <View style={{ width:30 }} />
+      <SafeAreaView style={{ flex:1 }}>
+        <View style={{ padding:16, gap:12 }}>
+          <Text style={{ fontSize:20, fontWeight:'700' }}>You are signed in</Text>
+          <Pressable onPress={()=>router.replace('/')} style={{ paddingVertical:12 }}><Text style={{ fontSize:16 }}>Go to Home</Text></Pressable>
+          <Pressable onPress={logOut} style={{ paddingVertical:12 }}><Text style={{ fontSize:16, color:'#d00', fontWeight:'700' }}>Log out</Text></Pressable>
         </View>
-
-        <Text style={{ fontSize:16, marginBottom:12 }}>You are signed in.</Text>
-        <View style={{ gap:12 }}>
-          <Pressable onPress={()=>router.replace('/')} style={{ paddingVertical:12 }}>
-            <Text style={{ fontSize:16 }}>Go Home</Text>
-          </Pressable>
-          <Pressable onPress={()=>router.replace('/profile')} style={{ paddingVertical:12 }}>
-            <Text style={{ fontSize:16 }}>Open Profile</Text>
-          </Pressable>
-          <Pressable onPress={logout} style={{ paddingVertical:12 }}>
-            <Text style={{ color:'#d00', fontSize:16, fontWeight:'700' }}>Log out</Text>
-          </Pressable>
-        </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{ flex:1 }}>
-      <View style={{ flex:1, paddingTop: 52, paddingHorizontal:16 }}>
-        <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-          <Pressable onPress={()=>router.back()} style={{ padding:6 }}>
-            <Ionicons name="chevron-back" size={24} color="#111" />
+    <SafeAreaView style={{ flex:1 }}>
+      <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{ flex:1 }}>
+        <View style={{ padding:16, gap:12 }}>
+          <Text style={{ fontSize:22, fontWeight:'700' }}>Sign in</Text>
+          <TextInput value={email} onChangeText={setEmail} placeholder="Email" autoCapitalize="none" keyboardType="email-address" style={{ borderWidth:1, borderColor:'#ccc', borderRadius:10, padding:12 }} />
+          <TextInput value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry style={{ borderWidth:1, borderColor:'#ccc', borderRadius:10, padding:12 }} />
+          <Pressable disabled={loading} onPress={signIn} style={{ backgroundColor:'#111', borderRadius:10, padding:14, alignItems:'center' }}>
+            <Text style={{ color:'#fff', fontWeight:'700' }}>{loading?'Loading…':'Sign in'}</Text>
           </Pressable>
-          <Text style={{ fontSize:18, fontWeight:'700' }}>Sign in</Text>
-          <View style={{ width:30 }} />
-        </View>
-
-        <View style={{ gap:12 }}>
-          <View>
-            <Text style={{ fontSize:13, color:'#666', marginBottom:6 }}>Email</Text>
-            <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholder="you@example.com" style={{ borderWidth:1, borderColor:'#ddd', borderRadius:10, paddingHorizontal:12, paddingVertical:10, fontSize:16, backgroundColor:'#fff' }} />
-          </View>
-          <Pressable disabled={!email || sending} onPress={sendMagic} style={{ backgroundColor: (!email||sending)?'#9cc':'#06f', paddingVertical:12, borderRadius:10, alignItems:'center' }}>
-            <Text style={{ color:'#fff', fontSize:16, fontWeight:'700' }}>{sending?'Sending…':'Send magic link'}</Text>
+          <Pressable disabled={loading} onPress={signUp} style={{ borderRadius:10, padding:14, alignItems:'center', borderWidth:1, borderColor:'#ddd' }}>
+            <Text style={{ fontWeight:'700' }}>{loading?'Loading…':'Create account'}</Text>
+          </Pressable>
+          <Pressable onPress={()=>router.replace('/')} style={{ paddingVertical:10, alignItems:'center' }}>
+            <Text>Back to Home</Text>
           </Pressable>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
