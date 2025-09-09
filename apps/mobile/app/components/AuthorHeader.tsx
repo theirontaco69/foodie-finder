@@ -12,14 +12,12 @@ function resolveAvatar(u: string | null | undefined, userId: string): string {
   if (!u) return '';
   let s = String(u);
 
-  // Replace placeholders anywhere (works for paths AND full URLs)
   s = s
     .replace(/%3CYOUR-USER-ID%3E/gi, userId)
     .replace(/<YOUR-USER-ID>/gi, userId)
     .replace(/YOUR-USER-ID/gi, userId)
     .replace(/<id>/gi, userId);
 
-  // If it is a full Supabase public URL, try to rebuild with storage API
   const m = s.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
   if (m) {
     const bucket = m[1];
@@ -28,10 +26,8 @@ function resolveAvatar(u: string | null | undefined, userId: string): string {
     return r?.data?.publicUrl || s;
   }
 
-  // If it's any http(s) URL that's not a supabase public path, return directly
   if (/^https?:\/\//i.test(s)) return s;
 
-  // Otherwise treat as "bucket/key" or bare filename
   const clean = s.replace(/^\/+/, '');
   const slash = clean.indexOf('/');
   if (slash === -1) {
@@ -48,7 +44,8 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
   const router = useRouter();
   const [p, setP] = useState<Profile | null>(initial ?? getProfileFromCache(userId) ?? null);
   const [avatarUrl, setAvatarUrl] = useState<string>('');
-  const finalAvatarUrl = resolveAvatarPublicUrl(supabase, avatarUrl ?? null, { userId }) ?? avatarUrl;
+  const displayLabel = p?.display_name ?? p?.username ?? null;
+  const finalAvatarUrl = resolveAvatarPublicUrl(supabase, avatarUrl ?? null, { userId }) ?? (displayLabel ? fallbackAvatar(displayLabel) : avatarUrl);
 
   useEffect(() => {
     setAvatarUrl(resolveAvatar(p?.avatar_url ?? null, userId, p?.display_name ?? null, p?.username ?? null, (p?.avatar_version as any)));

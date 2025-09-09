@@ -32,7 +32,7 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
     if(!meId){ setP(null); setCounts({following:0,followers:0,likes:0}); setLoading(false); return; }
     (async()=>{
       setLoading(true);
-      const r=await supabase.from('user_profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version').eq('id',meId).maybeSingle();
+      const r=await supabase.from('profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified:is_verified,created_at,avatar_version').eq('id',meId).maybeSingle();
       if(r.data) setP(r.data as any);
       const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',meId);
       const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',meId);
