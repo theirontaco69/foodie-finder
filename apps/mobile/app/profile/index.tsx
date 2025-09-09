@@ -69,7 +69,7 @@ export default function MyProfile() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'Posts'|'Videos'|'Reposts'|'Reviews'|'Tags'|'Likes'>('Posts');
 
-  useEffect(() => { (async () => { const { data } = await supabase.auth.getSession(); setMeId(data?.session?.user?.id ?? null); })(); }, []);
+  useEffect(() => { (async () => { const { data } = await supabase.auth.getUser(); setMeId(data?.user?.id ?? null); })(); }, []);
 
   useEffect(() => {
     if (!meId) return;
