@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ScrollView, Pressable, Text, View } from 'react-native';
 
@@ -15,7 +16,7 @@ export default function ProfileTabs({ tabs, active, onChange }: { tabs: string[]
           );
         })}
       </ScrollView>
-      <View style={{ height: 1, backgroundColor: '#e5e7eb', marginTop: -1 }} />
+      <View style={{ height: 1, backgroundColor: '#e5e7eb' }} />
     </View>
   );
 }
