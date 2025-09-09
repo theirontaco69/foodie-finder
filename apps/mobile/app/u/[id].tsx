@@ -1,20 +1,28 @@
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import VerifiedBadge from '../components/VerifiedBadge';
 import TopBar from '../components/TopBar';
 import NavBar from '../components/NavBar';
 import ProfileTabs from '../components/ProfileTabs';
 
-type Profile = { id: string; username: string|null; display_name: string|null; avatar_url: string|null; banner_url: string|null; bio: string|null; location: string|null; website: string|null; verified: boolean|null; created_at: string|null; avatar_version?: number|null };
-type Post = { id: string; author_id: string; is_video: boolean; media_urls: string[]; caption: string|null; created_at: string };
+type Profile = { id: string; username: string|null; display_name: string|null; avatar_url: string|null; banner_url: string|null; bio: string|null; verified: boolean|null; created_at: string|null; avatar_version?: number|null };
+type Post = { id: string; author_id: string; is_video: boolean; media_urls: string[]; caption: string|null; created_at: string; likes_count?: number|null };
+
+function abbreviate(n: number) {
+  if (n < 1000) return String(n);
+  if (n < 10000) return (Math.round(n / 100) / 10).toFixed(1).replace(/\.0$/, '') + 'K';
+  if (n < 1000000) return Math.round(n / 1000) + 'K';
+  if (n < 10000000) return (Math.round(n / 100000) / 10).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n < 1000000000) return Math.round(n / 1000000) + 'M';
+  return '1B+';
+}
 
 export default function PublicProfile() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [counts, setCounts] = useState({ following: 0, followers: 0, likes: 0 });
   const [posts, setPosts] = useState<Post[]>([]);
@@ -23,44 +31,28 @@ export default function PublicProfile() {
 
   useEffect(() => {
     if (!id) return;
+    let cancelled=false;
     (async () => {
       setLoading(true);
-      const r1 = await supabase
-        .from('user_profiles')
-        .select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version')
-        .eq('id', id)
-        .maybeSingle();
-      if (r1.data) {
-        setProfile({ ...(r1.data as any), verified: (r1.data as any).verified ?? null } as any);
-      } else {
-        const r2 = await supabase
-          .from('profiles')
+      try {
+        const r = await supabase.from('profiles')
           .select('id,username,display_name,avatar_url,banner_url,bio,verified:is_verified,created_at,avatar_version')
-          .eq('id', id)
-          .maybeSingle();
-        if (r2.data) setProfile({ ...(r2.data as any), location: null, website: null } as any);
+          .eq('id', id).maybeSingle();
+        if (!cancelled && r.data) setProfile(r.data as Profile);
+
+        const a = await supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', String(id));
+        const b = await supabase.from('follows').select('id', { count: 'exact', head: true }).eq('followee_id', String(id));
+        const p = await supabase.from('posts').select('id,author_id,is_video,media_urls,caption,created_at,likes_count').eq('author_id', String(id)).order('created_at',{ascending:false}).limit(100);
+        if (!cancelled && p.data) {
+          setPosts(p.data as Post[]);
+          const likes = (p.data as any[]).reduce((acc,x)=>acc+(x.likes_count||0),0);
+          setCounts({ following: a.count||0, followers: b.count||0, likes });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-if (r.data) {
-  setProfile(r.data as any);
-} else {
-  const r2 = await supabase.from('user_profiles')
-    .select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version')
-    .eq('id', meId).maybeSingle();
-  if (r2.data) setProfile({ ...(r2.data as any), verified: (r2.data as any).verified ?? null } as any);
-}
-      if (r.data) setProfile(r.data as Profile);
-      const a = await supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', id);
-      const b = await supabase.from('follows').select('id', { count: 'exact', head: true }).eq('followee_id', id);
-      const p = await supabase.from('posts').select('id,author_id,is_video,media_urls,caption,created_at,likes_count').eq('author_id', id).order('created_at',{ascending:false}).limit(100);
-      if (p.data) {
-        setPosts(p.data as Post[]);
-        const likes = (p.data as any[]).reduce((acc,x)=>acc+(x.likes_count||0),0);
-        setCounts({ following: a.count||0, followers: b.count||0, likes });
-      } else {
-        setCounts({ following: a.count||0, followers: b.count||0, likes: 0 });
-      }
-      setLoading(false);
     })();
+    return ()=>{cancelled=true};
   }, [id]);
 
   if (loading) {
@@ -104,26 +96,16 @@ if (r.data) {
           <Text style={{ color: '#666' }}>{profile.username ? '@' + profile.username : '@user'}</Text>
           {profile.bio ? <Text style={{ marginTop: 8 }}>{profile.bio}</Text> : null}
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 8 }}>
-            {profile.location ? <Text style={{ color: '#444' }}>{profile.location}</Text> : null}
-            {profile.website ? <Text style={{ color: '#06f' }}>{profile.website}</Text> : null}
-            {profile.created_at ? <Text style={{ color: '#444' }}>{new Date(profile.created_at).toLocaleString('en-US',{month:'long',year:'numeric'})}</Text> : null}
-          </View>
-
           <View style={{ flexDirection: 'row', gap: 18, marginTop: 12 }}>
-            <Text><Text style={{ fontWeight: '700' }}>{counts.following}</Text> Following</Text>
-            <Text><Text style={{ fontWeight: '700' }}>{counts.followers}</Text> Followers</Text>
-            <Text><Text style={{ fontWeight: '700' }}>{counts.likes}</Text> Likes</Text>
+            <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.following)}</Text> Following</Text>
+            <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.followers)}</Text> Followers</Text>
+            <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.likes)}</Text> Likes</Text>
           </View>
         </View>
 
         <View style={{ height: 6 }} />
         <View style={{ paddingHorizontal: 16 }}>
-          <ProfileTabs
-            tabs={['Posts','Videos','Reposts','Reviews','Tags']}
-            active={activeTab}
-            onChange={(t)=> setActiveTab(t as any)}
-          />
+          <ProfileTabs tabs={['Posts','Videos','Reposts','Reviews','Tags']} active={activeTab} onChange={(t)=> setActiveTab(t as any)} />
         </View>
 
         <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>

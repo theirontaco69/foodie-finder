@@ -15,15 +15,13 @@ type Profile = {
   username: string | null;
   display_name: string | null;
   bio: string | null;
-  location: string | null;
-  website: string | null;
   avatar_url: string | null;
   banner_url: string | null;
   verified: boolean | null;
   created_at: string | null;
   avatar_version?: number | null;
 };
-type Post = { id: string; author_id: string; is_video: boolean; media_urls: string[]; caption: string | null; created_at: string };
+type Post = { id: string; author_id: string; is_video: boolean; media_urls: string[]; caption: string | null; created_at: string; likes_count?: number|null };
 
 function formatJoined(d?: string | null) {
   if (!d) return '';
@@ -32,13 +30,12 @@ function formatJoined(d?: string | null) {
 }
 function abbreviate(n: number) {
   if (n < 1000) return String(n);
-  if (n < 10000) return (Math.round(n / 100) / 10).toFixed(1).replace(/.0$/, '') + 'K';
+  if (n < 10000) return (Math.round(n / 100) / 10).toFixed(1).replace(/\.0$/, '') + 'K';
   if (n < 1000000) return Math.round(n / 1000) + 'K';
-  if (n < 10000000) return (Math.round(n / 100000) / 10).toFixed(1).replace(/.0$/, '') + 'M';
+  if (n < 10000000) return (Math.round(n / 100000) / 10).toFixed(1).replace(/\.0$/, '') + 'M';
   if (n < 1000000000) return Math.round(n / 1000000) + 'M';
   return '1B+';
 }
-
 function Field({ label, value, onChangeText, multiline=false, autoCapitalize='sentences', keyboardType='default' }:{
   label:string; value:string; onChangeText:(t:string)=>void; multiline?:boolean; autoCapitalize?:any; keyboardType?:any;
 }) {
@@ -54,7 +51,6 @@ function Field({ label, value, onChangeText, multiline=false, autoCapitalize='se
 export default function MyProfile() {
   const router = useRouter();
   const [meId, setMeId] = useState<string | null>(null);
-  const [dbg, setDbg] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [counts, setCounts] = useState({ following: 0, followers: 0, likes: 0 });
@@ -63,8 +59,6 @@ export default function MyProfile() {
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
-  const [location, setLocation] = useState('');
-  const [website, setWebsite] = useState('');
   const [localAvatar, setLocalAvatar] = useState<string | null>(null);
   const [localBanner, setLocalBanner] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -74,35 +68,19 @@ export default function MyProfile() {
 
   useEffect(() => {
     if (!meId) return;
+    let cancelled=false;
     (async () => {
       setLoading(true);
-      const r1 = await supabase
-        .from('user_profiles')
-        .select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version')
-        .eq('id', meId)
-        .maybeSingle();
-      if (r1.data) {
-        setProfile({ ...(r1.data as any), verified: (r1.data as any).verified ?? null } as any);
-      } else {
-        const r2 = await supabase
-          .from('profiles')
+      try {
+        const r = await supabase.from('profiles')
           .select('id,username,display_name,avatar_url,banner_url,bio,verified:is_verified,created_at,avatar_version')
-          .eq('id', meId)
-          .maybeSingle();
-        if (r2.data) setProfile({ ...(r2.data as any), location: null, website: null } as any);
+          .eq('id', meId).maybeSingle();
+        if (!cancelled && r.data) setProfile(r.data as Profile);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      console.log('profiles query', { meId, error: r.error?.message, hasData: !!r.data });
-if (r.data) {
-  setProfile(r.data as any);
-} else {
-  const r2 = await supabase.from('user_profiles')
-    .select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version')
-    .eq('id', meId).maybeSingle();
-  if (r2.data) setProfile({ ...(r2.data as any), verified: (r2.data as any).verified ?? null } as any);
-}
-      if (r.data) setProfile(r.data as Profile);
-      setLoading(false);
     })();
+    return ()=>{cancelled=true};
   }, [meId]);
 
   useEffect(() => {
@@ -110,8 +88,6 @@ if (r.data) {
     setName(profile.display_name || '');
     setUsername(profile.username || '');
     setBio(profile.bio || '');
-    setLocation(profile.location || '');
-    setWebsite(profile.website || '');
     setLocalAvatar(null);
     setLocalBanner(null);
   }, [profile]);
@@ -128,7 +104,11 @@ if (r.data) {
   useEffect(() => {
     if (!meId) return;
     (async () => {
-      const r = await supabase.from('posts').select('id,author_id,is_video,media_urls,caption,created_at,likes_count').eq('author_id', meId).order('created_at', { ascending: false }).limit(100);
+      const r = await supabase.from('posts')
+        .select('id,author_id,is_video,media_urls,caption,created_at,likes_count')
+        .eq('author_id', meId)
+        .order('created_at', { ascending: false })
+        .limit(100);
       if (r.data) {
         setPosts(r.data as Post[]);
         const likes = (r.data as any[]).reduce((a, p) => a + (p.likes_count || 0), 0);
@@ -177,16 +157,14 @@ if (r.data) {
         display_name: name || null,
         username: username || null,
         bio: bio || null,
-        location: location || null,
-        website: website || null,
         avatar_url,
         banner_url
       };
       const u = await supabase.from('profiles').update(upd).eq('id', meId);
       if (u.error) throw u.error;
       const r = await supabase.from('profiles')
-        .select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified:is_verified,created_at,avatar_version')
-        .eq('id', meId).single();
+        .select('id,username,display_name,avatar_url,banner_url,bio,verified:is_verified,created_at,avatar_version')
+        .eq('id', meId).maybeSingle();
       if (r.data) setProfile(r.data as Profile);
       setEditing(false);
     } catch (e:any) {
@@ -243,12 +221,6 @@ if (r.data) {
           </View>
           <Text style={{ color: '#666' }}>{profile.username ? '@' + profile.username : '@user'}</Text>
           {profile.bio ? <Text style={{ marginTop: 8 }}>{profile.bio}</Text> : null}
-
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 8 }}>
-            {profile.location ? <Text style={{ color: '#444' }}>{profile.location}</Text> : null}
-            {profile.website ? <Text style={{ color: '#06f' }}>{profile.website}</Text> : null}
-            {profile.created_at ? <Text style={{ color: '#444' }}>{formatJoined(profile.created_at)}</Text> : null}
-          </View>
 
           <View style={{ flexDirection: 'row', gap: 18, marginTop: 12 }}>
             <Pressable onPress={() => router.push('/profile/following')}><Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.following)}</Text> Following</Text></Pressable>
@@ -332,8 +304,6 @@ if (r.data) {
               <Field label="Name" value={name} onChangeText={setName} />
               <Field label="Username" value={username} onChangeText={setUsername} autoCapitalize="none" />
               <Field label="Bio" value={bio} onChangeText={setBio} multiline />
-              <Field label="Location" value={location} onChangeText={setLocation} />
-              <Field label="Website" value={website} onChangeText={setWebsite} autoCapitalize="none" keyboardType="url" />
             </View>
           </ScrollView>
         </KeyboardAvoidingView>

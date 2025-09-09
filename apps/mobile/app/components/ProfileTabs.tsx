@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { ScrollView, Pressable, Text, View } from 'react-native';
-
 export default function ProfileTabs({ tabs, active, onChange }: { tabs: string[]; active: string; onChange: (t:string)=>void }) {
   return (
     <View>
