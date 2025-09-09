@@ -4,7 +4,7 @@ import { ScrollView, Pressable, Text, View } from 'react-native';
 export default function ProfileTabs({ tabs, active, onChange }: { tabs: string[]; active: string; onChange: (t:string)=>void }) {
   return (
     <View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 0 }}>
         {tabs.map(t => {
           const is = active === t;
           return (
