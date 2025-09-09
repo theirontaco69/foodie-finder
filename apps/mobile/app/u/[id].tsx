@@ -14,6 +14,7 @@ type Profile = {
 };
 type Post = { id: string; author_id: string; is_video: boolean; media_urls: string[]; caption: string|null; created_at: string };
 
+import React, { useState } from 'react';
 export default function PublicProfile() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();

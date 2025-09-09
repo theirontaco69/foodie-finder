@@ -63,6 +63,7 @@ export default function MyProfile() {
   const [localAvatar, setLocalAvatar] = useState<string | null>(null);
   const [localBanner, setLocalBanner] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'Posts'|'Videos'|'Reposts'|'Reviews'|'Tags'|'Likes'>('Posts');
 
   useEffect(() => {
     (async () => {
@@ -318,6 +319,15 @@ const mediaTypesImages = useMemo(() => {
           <Pressable onPress={() => router.push('/profile/likes')}>
             <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.likes)}</Text> Likes</Text>
           </Pressable>
+        <View style={{ height: 12 }} />
+        <View style={{ flexDirection: 'row', gap: 20, paddingHorizontal: 16, paddingTop: 8, borderBottomWidth: 1, borderColor: '#eee' }}>
+          <Pressable onPress={() => setActiveTab('Posts')}><Text style={{ fontWeight: activeTab==='Posts' ? '700' : '500' }}>Posts</Text></Pressable>
+          <Pressable onPress={() => setActiveTab('Videos')}><Text style={{ fontWeight: activeTab==='Videos' ? '700' : '500' }}>Videos</Text></Pressable>
+          <Pressable onPress={() => setActiveTab('Reposts')}><Text style={{ fontWeight: activeTab==='Reposts' ? '700' : '500' }}>Reposts</Text></Pressable>
+          <Pressable onPress={() => setActiveTab('Reviews')}><Text style={{ fontWeight: activeTab==='Reviews' ? '700' : '500' }}>Reviews</Text></Pressable>
+          <Pressable onPress={() => setActiveTab('Tags')}><Text style={{ fontWeight: activeTab==='Tags' ? '700' : '500' }}>Tags</Text></Pressable>
+          <Pressable onPress={() => setActiveTab('Likes')}><Text style={{ fontWeight: activeTab==='Likes' ? '700' : '500' }}>Likes</Text></Pressable>
+        </View>
           </View>
 
           <View style={{ height: 16 }} />
