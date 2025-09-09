@@ -184,7 +184,8 @@ export default function PublicProfile() {
           )}
         </View>
       </ScrollView>
-      <NavBar />
+      )}
+<NavBar />
     </View>
   );
 }

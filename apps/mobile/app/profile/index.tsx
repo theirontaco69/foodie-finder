@@ -235,7 +235,8 @@ const mediaTypesImages = useMemo(() => {
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator />
         </View>
-        <NavBar />
+        )}
+<NavBar />
       </View>
     );
   }
@@ -321,7 +322,7 @@ const mediaTypesImages = useMemo(() => {
             <Text><Text style={{ fontWeight: '700' }}>{abbreviate(counts.likes)}</Text> Likes</Text>
           </Pressable>
         <View style={{ height: 12 }} />
-        <View style={{ paddingHorizontal: 16 }}><ProfileTabs tabs={['Posts','Videos','Reposts','Reviews','Tags','Likes']} active={activeTab} onChange={(t)=> t==='Likes' ? router.push('/profile/likes') : setActiveTab(t as any)} /></View>
+        <View style={{ paddingHorizontal: 16 }}><View style={{ paddingHorizontal: 16 }}><ProfileTabs tabs={['Posts','Videos','Reposts','Reviews','Tags','Likes']} active={activeTab} onChange={(t)=> t==='Likes' ? router.push('/profile/likes') : setActiveTab(t)} /></View></View>
         <View style={{ height: 12 }} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 20 }} style={{ paddingTop: 8, borderBottomWidth: 1, borderColor: '#eee' }}>
   <Pressable onPress={() => setActiveTab('Posts')}><Text style={{ fontWeight: activeTab==='Posts' ? '700' : '500', borderBottomWidth: activeTab==='Posts' ? 2 : 0 }}>{activeTab}</Text></Pressable>
