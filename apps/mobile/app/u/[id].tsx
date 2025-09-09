@@ -28,8 +28,8 @@ export default function PublicProfile() {
   useEffect(()=>{(async()=>{const a=await supabase.auth.getUser(); setMeId(a?.data?.user?.id??null);})();},[]);
 
   useEffect(()=>{ if(!id) return; (async()=>{ setLoading(true);
-    const r = await supabase.from('user_profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version').eq('id',String(id)).maybeSingle();
-    if(r.data) setP(r.data as any);
+    const prof = await supabase.from('user_profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version').eq('id',String(id)).maybeSingle();
+    if(prof.data) setP(prof.data as any);
     const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',String(id));
     const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',String(id));
     const t=await supabase.rpc('total_likes_received',{author:String(id)});
@@ -45,7 +45,7 @@ export default function PublicProfile() {
     setLoading(false);
   })(); },[id,meId]);
 
-  async function follow(){ if(!meId){ router.push('/login'); return; } await supabase.from('follows').insert({ follower_id: meId, followee_id: String(id) }).select().single(); setIsFollowing(true); setCounts(c=>({...c,followers:c.followers+1})); }
+  async function follow(){ if(!meId){ router.push('/login'); return; } await supabase.from('follows').insert({ follower_id: meId, followee_id: String(id) }); setIsFollowing(true); setCounts(c=>({...c,followers:c.followers+1})); }
   async function unfollow(){ if(!meId) return; await supabase.from('follows').delete().eq('follower_id',meId).eq('followee_id',String(id)); setIsFollowing(false); setCounts(c=>({...c,followers:Math.max(0,c.followers-1)})); }
 
   if(loading){ return(<View style={{flex:1,paddingBottom:96}}><TopBar/><View style={{flex:1,alignItems:'center',justifyContent:'center'}}><ActivityIndicator/></View><NavBar/></View>); }

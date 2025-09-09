@@ -26,8 +26,8 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   const [counts,setCounts]=useState({following:0,followers:0,likes:0});
   const [loading,setLoading]=useState(true);
 
-  useEffect(()=>{(async()=>{const s=await supabase.auth.getSession(); setMeId(s.data.session?.user?.id??null); setLoading(false);})();},[]);
-  useEffect(()=>{ const sub=supabase.auth.onAuthStateChange((_e,session)=>{ setMeId(session?.user?.id??null); }); return ()=>{ sub.data.subscription.unsubscribe(); }; },[]);
+  useEffect(()=>{(async()=>{const u=await supabase.auth.getUser(); setMeId(u?.data?.user?.id??null); setLoading(false);})();},[]);
+  useEffect(()=>{const sub=supabase.auth.onAuthStateChange((_e,s)=>{setMeId(s?.session?.user?.id??null);}); return()=>sub.data.subscription.unsubscribe();},[]);
 
   useEffect(()=>{ if(!meId){ setP(null); setCounts({following:0,followers:0,likes:0}); return; } (async()=>{ setLoading(true);
     const r=await supabase.from('user_profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version').eq('id',meId).maybeSingle();
