@@ -147,6 +147,20 @@ useEffect(() => {
   })();
 }, [meId]);
 
+
+async function sumLikesCount(userId:string){
+  const r = await supabase.from('posts').select('likes_count').eq('author_id', userId).limit(1000);
+  const likes = (r.data||[]).reduce((a,x)=>a + (x.likes_count||0), 0);
+  return likes;
+}
+useEffect(() => {
+  if (!meId) return;
+  (async () => {
+    const likes = await sumLikesCount(meId);
+    setCounts(prev => ({ ...prev, likes }));
+  })();
+}, [meId, posts.length]);
+
 const mediaTypesImages = useMemo(() => {
     const anyPicker: any = ImagePicker;
     if (anyPicker?.MediaType?.Image) return [anyPicker.MediaType.Image];
