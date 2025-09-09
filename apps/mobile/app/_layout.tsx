@@ -34,19 +34,21 @@ export default function RootLayout() {
 
   const close = () => animate(false);
 
+  useEffect(()=>{ setReady(true); },[]);
+
   return (
     <View style={{ flex: 1 }}>
       <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 18, zIndex: 20 }} {...edge.panHandlers} />
-      <Slot />
-      <Animated.View
+      <View style={{ flex: 1 }}><Slot /></View>
+      <<Animated.View
         pointerEvents={open ? 'auto' : 'none'}
         style={{
           position: 'absolute',
           left: 0, right: 0, top: 0, bottom: 0,
           backgroundColor: '#000',
-          opacity: backdrop.interpolate({ inputRange: [0,1], outputRange: [0,0.35] })
-        }}
-      >
+          opacity: backdrop.interpolate({ inputRange: [0, 1], outputRange: [0, 0.35] }),
+          zIndex: 15
+        }}>
         <Pressable onPress={close} style={{ flex: 1 }} />
       </Animated.View>
       <Animated.View
@@ -55,11 +57,13 @@ export default function RootLayout() {
           left: 0, top: 0, bottom: 0,
           width: panel,
           transform: [{ translateX: tx }],
-          backgroundColor: '#fff'
-        }}
-      >
+          backgroundColor: '#fff',
+          zIndex: 16
+        }}>
         <SideMenu open={open} onClose={close} />
       </Animated.View>
+    </View>
+  )}
     </View>
   );
 }
