@@ -54,6 +54,7 @@ function Field({ label, value, onChangeText, multiline=false, autoCapitalize='se
 export default function MyProfile() {
   const router = useRouter();
   const [meId, setMeId] = useState<string | null>(null);
+  const [dbg, setDbg] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [counts, setCounts] = useState({ following: 0, followers: 0, likes: 0 });
@@ -76,8 +77,9 @@ export default function MyProfile() {
     (async () => {
       setLoading(true);
       const r = await supabase.from('profiles')
-  .select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified:is_verified,created_at,avatar_version')
-  .eq('id', meId).maybeSingle();
+        .select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified:is_verified,created_at,avatar_version')
+        .eq('id', meId).maybeSingle();
+      console.log('profiles query', { meId, error: r.error?.message, hasData: !!r.data });
 if (r.data) {
   setProfile(r.data as any);
 } else {
