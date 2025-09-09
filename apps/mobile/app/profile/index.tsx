@@ -109,15 +109,13 @@ export default function MyProfile() {
   }, [meId]);
 
   useEffect(() => {
-    if (!meId) return;
-    (async () => {
-      const { count } = await supabase
-        .from('post_likes')
-        .select('id,posts!inner(author_id)', { count: 'exact', head: true })
-        .eq('posts.author_id', meId);
-      setCounts(prev => ({ ...prev, likes: count || 0 }));
-    })();
-  }, [meId]);
+  if (!meId) return;
+  (async () => {
+    const r = await supabase.rpc('total_likes_received', { author: meId });
+    const likes = Number(r.data ?? 0);
+    setCounts(prev => ({ ...prev, likes }));
+  })();
+}, [meId]);
 
   useEffect(() => {
     if (!profile) return;
