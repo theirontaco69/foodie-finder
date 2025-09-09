@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { resolveAvatarPublicUrl, fallbackAvatar } from '../../lib/avatar';
 import VerifiedBadge from './VerifiedBadge';
@@ -25,18 +25,26 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   const [counts,setCounts]=useState({following:0,followers:0,likes:0});
   const [loading,setLoading]=useState(true);
 
-  useEffect(()=>{(async()=>{const a=await supabase.auth.getUser(); setMeId(a?.data?.user?.id??null);})();},[]);
-  
-useEffect(() => {
-  const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-    setMeId(session?.user?.id ?? null);
-  });
-  return () => { try { sub.subscription.unsubscribe(); } catch {} };
-}, []);
-useEffect(()=>{ if(!meId){ setLoading(false); return; } (async()=>{ setLoading(true); const r=await supabase.from('user_profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version').eq('id',meId).maybeSingle(); if(r.data) setP(r.data as any); const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',meId); const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',meId); const t=await supabase.rpc('total_likes_received',{author:meId}); setCounts({following:a.count||0,followers:b.count||0,likes:Number(t.data??0)}); setLoading(false); })(); },[meId]);
-useEffect(()=>{ if(!open) return; (async()=>{ const a=await supabase.auth.getUser(); setMeId(a?.data?.user?.id??null); })(); },[open]);
-function nav(path:string){ onClose(); router.push(path as any); }
-  async function logout(){ await supabase.auth.signOut(); setMeId(null); setP(null); setCounts({following:0,followers:0,likes:0}); onClose(); router.replace('/login'); }
+  async function sync() {
+    const u=await supabase.auth.getUser();
+    const id=u?.data?.user?.id??null;
+    setMeId(id);
+    if(!id){ setP(null); setCounts({following:0,followers:0,likes:0}); setLoading(false); return; }
+    setLoading(true);
+    const r=await supabase.from('user_profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version').eq('id',id).maybeSingle();
+    if(r.data){ setP(r.data as any); }
+    const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',id);
+    const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',id);
+    const t=await supabase.rpc('total_likes_received',{author:id});
+    setCounts({following:a.count||0, followers:b.count||0, likes:Number(t.data??0)});
+    setLoading(false);
+  }
+
+  useEffect(()=>{ sync(); const { data: sub } = supabase.auth.onAuthStateChange(()=>sync()); return ()=>{ try{ sub.subscription.unsubscribe(); }catch{} }; },[]);
+  useEffect(()=>{ if(open) sync(); },[open]);
+
+  function nav(path:string){ onClose(); router.push(path as any); }
+  async function logout(){ await supabase.auth.signOut(); await sync(); onClose(); router.replace('/login'); }
 
   const avatar=resolveAvatarPublicUrl(supabase, p?.avatar_url??null, { userId: p?.id??undefined, version: p?.avatar_version??undefined }) ?? (p?.display_name||p?.username ? fallbackAvatar(p?.display_name||p?.username) : null);
 
