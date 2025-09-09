@@ -35,10 +35,16 @@ export default function PublicProfile() {
     (async () => {
       setLoading(true);
       try {
-        const r = await supabase.from('profiles')
-          .select('id,username,display_name,avatar_url,banner_url,bio,verified:is_verified,created_at,avatar_version')
-          .eq('id', id).maybeSingle();
-        if (!cancelled && r.data) setProfile(r.data as Profile);
+        const r1 = await supabase.from('user_profiles')
+          .select('id,username,display_name,bio,avatar_url,banner_url,verified,created_at,avatar_version')
+          .eq('id', String(id)).maybeSingle();
+        if (!cancelled && r1.data) setProfile(r1.data as Profile);
+        if (!r1.data) {
+          const r2 = await supabase.from('profiles')
+            .select('id,username,display_name,bio,avatar_url,banner_url,verified:is_verified,created_at,avatar_version')
+            .eq('id', String(id)).maybeSingle();
+          if (!cancelled && r2.data) setProfile(r2.data as Profile);
+        }
 
         const a = await supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', String(id));
         const b = await supabase.from('follows').select('id', { count: 'exact', head: true }).eq('followee_id', String(id));
