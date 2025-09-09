@@ -324,14 +324,24 @@ const mediaTypesImages = useMemo(() => {
         <View style={{ height: 12 }} />
         <View style={{ paddingHorizontal: 16 }}><View style={{ paddingHorizontal: 16 }}><ProfileTabs tabs={['Posts','Videos','Reposts','Reviews','Tags','Likes']} active={activeTab} onChange={(t)=> t==='Likes' ? router.push('/profile/likes') : setActiveTab(t)} /></View></View>
         <View style={{ height: 12 }} />
-        <View style={{ height: 6 }} />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 20 }} style={{ paddingTop: 8, borderBottomWidth: 1, borderColor: '#eee' }}>
+  <Pressable onPress={() => setActiveTab('Posts')}><Text style={{ fontWeight: activeTab==='Posts' ? '700' : '500', borderBottomWidth: activeTab==='Posts' ? 2 : 0 }}>{activeTab}</Text></Pressable>
+  <Pressable onPress={() => setActiveTab('Videos')}><Text style={{ fontWeight: activeTab==='Videos' ? '700' : '500', borderBottomWidth: activeTab==='Videos' ? 2 : 0 }}>Videos</Text></Pressable>
+  <Pressable onPress={() => setActiveTab('Reposts')}><Text style={{ fontWeight: activeTab==='Reposts' ? '700' : '500', borderBottomWidth: activeTab==='Reposts' ? 2 : 0 }}>Reposts</Text></Pressable>
+  <Pressable onPress={() => setActiveTab('Reviews')}><Text style={{ fontWeight: activeTab==='Reviews' ? '700' : '500', borderBottomWidth: activeTab==='Reviews' ? 2 : 0 }}>Reviews</Text></Pressable>
+  <Pressable onPress={() => setActiveTab('Tags')}><Text style={{ fontWeight: activeTab==='Tags' ? '700' : '500', borderBottomWidth: activeTab==='Tags' ? 2 : 0 }}>Tags</Text></Pressable>
+  <Pressable onPress={() => setActiveTab('Likes')}><Text style={{ fontWeight: activeTab==='Likes' ? '700' : '500', borderBottomWidth: activeTab==='Likes' ? 2 : 0 }}>Likes</Text></Pressable>
+</ScrollView>
+          </View>
 
-          <Text style={{ fontSize: 16, fontWeight: '700', marginBottom: 8 }}>{activeTab}</Text>
+          <View style={{ height: 16 }} />
+
+          <Text style={{ fontSize: 16, fontWeight: '700', marginBottom: 8 }}>Posts</Text>
           {posts.length === 0 ? (
             <Text style={{ color: '#666' }}>No posts yet.</Text>
           ) : (
             <View style={{ gap: 12 }}>
-              {activeTab==='Posts' && (activeTab==='Posts' ? posts : []).map((p) => (
+              {activeTab==='Posts' && posts.map((p) => (
                 <View key={p.id} style={{ borderWidth: 1, borderColor: '#eee', borderRadius: 12, padding: 12 }}>
                   <View style={{ gap: 8 }}>
                     {p.is_video
