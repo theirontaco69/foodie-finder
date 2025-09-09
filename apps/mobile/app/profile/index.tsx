@@ -19,18 +19,19 @@ type Profile = {
   banner_url: string | null;
   verified: boolean | null;
   created_at: string | null;
-  avatar_version?: number | null;
 };
+
 type Post = { id: string; author_id: string; is_video: boolean; media_urls: string[]; caption: string | null; created_at: string; likes_count?: number|null };
 
 function abbreviate(n: number) {
   if (n < 1000) return String(n);
-  if (n < 10000) return (Math.round(n / 100) / 10).toFixed(1).replace(/\.0$/, '') + 'K';
+  if (n < 10000) return (Math.round(n / 100) / 10).toFixed(1).replace(/.0$/, '') + 'K';
   if (n < 1000000) return Math.round(n / 1000) + 'K';
-  if (n < 10000000) return (Math.round(n / 100000) / 10).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n < 10000000) return (Math.round(n / 100000) / 10).toFixed(1).replace(/.0$/, '') + 'M';
   if (n < 1000000000) return Math.round(n / 1000000) + 'M';
   return '1B+';
 }
+
 function Field({ label, value, onChangeText, multiline=false, autoCapitalize='sentences', keyboardType='default' }:{
   label:string; value:string; onChangeText:(t:string)=>void; multiline?:boolean; autoCapitalize?:any; keyboardType?:any;
 }) {
@@ -72,27 +73,21 @@ export default function MyProfile() {
 
   useEffect(() => {
     if (!meId) return;
-    let cancelled=false;
+    let cancel=false;
     (async () => {
       setLoading(true);
       try {
-        const r1 = await supabase
-          .from('user_profiles')
-          .select('id,username,display_name,bio,avatar_url,banner_url,verified,created_at,avatar_version')
-          .eq('id', meId)
-          .maybeSingle();
-        if (!cancelled && r1.data) { setProfile(r1.data as Profile); return; }
-        const r2 = await supabase
+        const r = await supabase
           .from('profiles')
-          .select('id,username,display_name,bio,avatar_url,banner_url,verified:is_verified,created_at,avatar_version')
+          .select('id,username,display_name,bio,avatar_url,banner_url,verified:is_verified,created_at')
           .eq('id', meId)
           .maybeSingle();
-        if (!cancelled && r2.data) setProfile(r2.data as Profile);
+        setProfile(r.data as any || null);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancel) setLoading(false);
       }
     })();
-    return ()=>{cancelled=true};
+    return ()=>{cancel=true};
   }, [meId]);
 
   useEffect(() => {
@@ -122,7 +117,7 @@ export default function MyProfile() {
         .order('created_at', { ascending: false })
         .limit(100);
       if (r.data) {
-        setPosts(r.data as Post[]);
+        setPosts(r.data as any);
         const likes = (r.data as any[]).reduce((a, p) => a + (p.likes_count || 0), 0);
         setCounts(x => ({ ...x, likes }));
       }
@@ -130,9 +125,9 @@ export default function MyProfile() {
   }, [meId]);
 
   const mediaTypesImages = useMemo(() => {
-    const any: any = ImagePicker;
-    if (any?.MediaType?.Image) return [any.MediaType.Image];
-    if (any?.MediaTypeOptions?.Images) return any.MediaTypeOptions.Images;
+    const anyPicker: any = ImagePicker;
+    if (anyPicker?.MediaType?.Image) return [anyPicker.MediaType.Image];
+    if (anyPicker?.MediaTypeOptions?.Images) return anyPicker.MediaTypeOptions.Images;
     return undefined;
   }, []);
 
@@ -172,19 +167,12 @@ export default function MyProfile() {
         avatar_url,
         banner_url
       };
-      const u1 = await supabase.from('user_profiles').update(upd).eq('id', meId);
-      if (u1.error) {
-        const u2 = await supabase.from('profiles').update(upd).eq('id', meId);
-        if (u2.error) throw u2.error;
-      }
-      const r1 = await supabase.from('user_profiles')
-        .select('id,username,display_name,bio,avatar_url,banner_url,verified,created_at,avatar_version').eq('id', meId).maybeSingle();
-      if (r1.data) setProfile(r1.data as Profile);
-      else {
-        const r2 = await supabase.from('profiles')
-          .select('id,username,display_name,bio,avatar_url,banner_url,verified:is_verified,created_at,avatar_version').eq('id', meId).maybeSingle();
-        if (r2.data) setProfile(r2.data as Profile);
-      }
+      const u = await supabase.from('profiles').update(upd).eq('id', meId);
+      if (u.error) throw u.error;
+      const r = await supabase.from('profiles')
+        .select('id,username,display_name,bio,avatar_url,banner_url,verified:is_verified,created_at')
+        .eq('id', meId).maybeSingle();
+      if (r.data) setProfile(r.data as any);
       setEditing(false);
     } catch (e:any) {
       Alert.alert('Save error', e?.message || 'Failed to save profile');
@@ -250,11 +238,7 @@ export default function MyProfile() {
 
         <View style={{ height: 6 }} />
         <View style={{ paddingHorizontal: 16 }}>
-          <ProfileTabs
-            tabs={['Posts','Videos','Reposts','Reviews','Tags','Likes']}
-            active={activeTab}
-            onChange={(t)=> t==='Likes' ? router.push('/profile/likes') : setActiveTab(t as any)}
-          />
+          <ProfileTabs tabs={['Posts','Videos','Reposts','Reviews','Tags','Likes']} active={activeTab} onChange={(t)=> t==='Likes' ? router.push('/profile/likes') : setActiveTab(t as any)} />
         </View>
 
         <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
