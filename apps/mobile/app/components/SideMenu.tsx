@@ -27,7 +27,7 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   const [loading,setLoading]=useState(true);
 
   useEffect(()=>{
-    supabase.auth.getSession().then(r=>setMeId(r.data?.session?.user?.id??null));
+    supabase.auth.getUser().then(r=>setMeId(r.data?.session?.user?.id??null));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session)=>{ setMeId(session?.user?.id ?? null) });
     return ()=>{ sub.subscription.unsubscribe() };
   },[]);
@@ -52,7 +52,7 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   const avatar=resolveAvatarPublicUrl(supabase, p?.avatar_url??null, { userId:p?.id??undefined, version:p?.avatar_version??undefined }) ?? (p?.display_name||p?.username ? fallbackAvatar(p?.display_name||p?.username) : null);
 
   return (
-    <View style={{ flex:1, backgroundColor:'#fff', paddingTop:60, paddingHorizontal:16 }}>
+    <View style={{ flex:1, backgroundColor:'#fff', paddingTop:60, paddingHorizontal: 16 }}>
       {loading ? (
         <View style={{ alignItems:'center', justifyContent:'center', padding:20 }}><ActivityIndicator/></View>
       ) : meId && p ? (

@@ -12,17 +12,19 @@ import AuthorHeader from './components/AuthorHeader';
 type Post = { id:string; author_id:string; is_video:boolean; media_urls:string[]; caption:string|null; created_at:string };
 
 export default function HomeFeed(){
+  const router = useRouter();
   const router=useRouter();
   const [posts,setPosts]=useState<Post[]>([]);
   const [loading,setLoading]=useState(true);
   const [refreshing,setRefreshing]=useState(false);
+  const [liking,setLiking]=useState<string|null>(null);
 
   async function load(){
     setLoading(true);
     try{
       const { data, error } = await supabase
         .from('posts')
-        .select('id,author_id,is_video,media_urls,caption,created_at')
+        .select('id,author_id,is_video,media_urls,caption,created_at,likes_count')
         .order('created_at',{ascending:false})
         .limit(100);
       if(error){ console.log('feed load error', error.message); setPosts([]); }
@@ -56,11 +58,11 @@ export default function HomeFeed(){
                 <View style={{ flexDirection:'row', alignItems:'center', gap:24, marginTop:12 }}>
                   <Pressable onPress={()=>router.push('/post/'+p.id)} style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
                     <Ionicons name="chatbubble-ellipses-outline" size={20} color="#111" />
-                    <Text>Comments</Text>
+                    <Text>Comment</Text>
                   </Pressable>
-                  <Pressable onPress={()=>router.push('/post/'+p.id)} style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
-                    <Ionicons name="repeat-outline" size={20} color="#111" />
-                    <Text>Repost</Text>
+                  <Pressable onPress={()=>toggleLike(p.id)} disabled={liking===p.id} style={{ flexDirection:'row', alignItems:'center', gap:6, opacity: liking===p.id?0.5:1 }}>
+                    <Ionicons name="heart-outline" size={20} color="#111" />
+                    <Text>{(p as any).likes_count??0}</Text>
                   </Pressable>
                 </View>
               </View>
