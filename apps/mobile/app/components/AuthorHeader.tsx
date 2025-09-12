@@ -17,7 +17,7 @@ export default function AuthorHeader({ userId }:{ userId:string }){
   useEffect(()=>{
     let cancel=false;
     (async()=>{
-      const r=await supabase.from('user_profiles').select('id,display_name,username,avatar_url,avatar_version,verified').eq('id',userId).maybeSingle();
+      const r=await supabase.from('user_profiles').select('id, display_name, username, avatar_url, avatar_version, verified').eq('id',userId).maybeSingle();
       if(cancel) return;
       if(r.data){
         setP(r.data as any);

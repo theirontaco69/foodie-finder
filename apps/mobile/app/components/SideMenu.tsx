@@ -27,8 +27,8 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
     setLoading(false);
   }
 
-  useEffect(()=>{(async()=>{const s=await supabase.auth.getSession();const uid=s?.data?.session?.user?.id??null;setMeId(uid);if(uid) load(uid); else {setLoading(false);}})();},[]);
-  useEffect(()=>{const sub=supabase.auth.onAuthStateChange((_e,session)=>{const uid=session?.user?.id??null;setMeId(uid);if(uid) load(uid); else {setP(null);setCounts({following:0,followers:0,likes:0});setLoading(false);} });return()=>{sub.data?.subscription?.unsubscribe?.();};},[]);
+  useEffect(()=>{(async()=>{const s=await supabase.auth.getSession();const uid=s?.data?.session?.user?.id??null;setMeId(uid);if(uid) load(uid); else setLoading(false);})();},[]);
+  useEffect(()=>{const sub=supabase.auth.onAuthStateChange((_e,session)=>{const uid=session?.user?.id??null;setMeId(uid);if(uid) load(uid); else {setP(null);setCounts({following:0,followers:0,likes:0});setLoading(false);} });return()=>{sub.data.subscription.unsubscribe();};},[]);
 
   function nav(path:string){ onClose(); router.push(path as any); }
   async function logout(){ await supabase.auth.signOut(); onClose(); router.replace('/login'); }
