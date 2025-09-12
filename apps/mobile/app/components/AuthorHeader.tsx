@@ -12,26 +12,35 @@ type Profile = { id:string; username:string|null; display_name:string|null; avat
 
 export default function AuthorHeader({ userId, initial }: { userId: string; initial?: CachedProfile | null; }) {
   const router = useRouter();
-  const [p,setP]=useState<Profile|null>(initial ? { id: initial.id, username: initial.username, display_name: initial.display_name, avatar_url: initial.avatar_url, verified: (initial as any).verified ?? null } : (getProfileFromCache(userId) as any) ?? null);
+  const cached = initial ? { id: initial.id, username: initial.username, display_name: initial.display_name, avatar_url: initial.avatar_url } as any : (getProfileFromCache(userId) as any) ?? null;
+  const [p,setP]=useState<Profile|null>(cached ? { ...cached, verified: (cached as any).verified ?? null } : null);
   const [avatar,setAvatar]=useState<string>('');
 
   useEffect(()=>{
+    let cancelled=false;
+    async function fetchProfile(table:string){
+      const r=await supabase.from(table).select(table==='profiles' ? 'id,username,display_name,avatar_url,verified:is_verified,avatar_version' : 'id,username,display_name,avatar_url,verified,avatar_version').eq('id',userId).maybeSingle();
+      return r.data as any || null;
+    }
     (async()=>{
-      const need=!p || p.display_name==null || p.username==null || p.avatar_url==null;
-      if(need && userId){
-        const r=await supabase.from('user_profiles').select('id,username,display_name,avatar_url,verified,avatar_version').eq('id',userId).maybeSingle();
-        if(r.data){
-          const prof={ id:r.data.id, username:r.data.username, display_name:r.data.display_name, avatar_url:r.data.avatar_url, verified:r.data.verified, avatar_version:(r.data as any).avatar_version } as Profile;
-          setP(prof);
-          setProfileInCache({ id:prof.id, username:prof.username, display_name:prof.display_name, avatar_url:prof.avatar_url });
-          const url=resolveAvatarPublicUrl(supabase, prof.avatar_url, { userId: prof.id, version: prof.avatar_version }) ?? (prof.display_name||prof.username ? fallbackAvatar(prof.display_name||prof.username) : '');
-          setAvatar(url||'');
+      let prof: any = null;
+      if(!p || p.display_name==null || p.username==null){
+        prof = await fetchProfile('profiles');
+        if(!prof) prof = await fetchProfile('user_profiles');
+        if(cancelled) return;
+        if(prof){
+          const normalized:Profile={ id:prof.id, username:prof.username, display_name:prof.display_name, avatar_url:prof.avatar_url, verified:prof.verified??null, avatar_version:prof.avatar_version??undefined };
+          setP(normalized);
+          setProfileInCache({ id: normalized.id, username: normalized.username, display_name: normalized.display_name, avatar_url: normalized.avatar_url });
         }
-      } else if(p){
-        const url=resolveAvatarPublicUrl(supabase, p.avatar_url, { userId: p.id, version: p.avatar_version }) ?? (p.display_name||p.username ? fallbackAvatar(p.display_name||p.username) : '');
+      }
+      const base=prof||p;
+      if(base){
+        const url=resolveAvatarPublicUrl(supabase, base.avatar_url, { userId: base.id, version: base.avatar_version }) ?? (base.display_name||base.username ? fallbackAvatar(base.display_name||base.username) : '');
         setAvatar(url||'');
       }
     })();
+    return ()=>{cancelled=true};
   },[userId, p?.avatar_url]);
 
   const name=p?.display_name||'User';
