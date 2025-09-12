@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, RefreshControl, ScrollView, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { supabase } from '../lib/supabase';
@@ -8,7 +8,7 @@ import NavBar from './components/NavBar';
 import AuthorHeader from './components/AuthorHeader';
 
 type Post = { id:string; author_id:string; is_video:boolean; media_urls:string[]; caption:string|null; created_at:string };
-type Prof = { id:string; display_name:string|null; username:string|null; avatar_url:string|null; avatar_version?:number|null };
+type Prof = { id:string; display_name:string|null; username:string|null; avatar_url:string|null };
 
 export default function HomeFeed(){
   const [meId,setMeId]=useState<string|null>(null);
@@ -34,8 +34,8 @@ export default function HomeFeed(){
     setPosts(list);
     const ids=Array.from(new Set(list.map(x=>x.author_id)));
     if(ids.length){
-      const pr=await supabase.from('user_profiles').select('id,display_name,username,avatar_url,avatar_version').in('id',ids);
-      const map:Record<string,Prof|null>={}; (pr.data||[]).forEach((d:any)=>{ map[d.id]={ id:d.id, display_name:d.display_name, username:d.username, avatar_url:d.avatar_url, avatar_version:d.avatar_version };});
+      const pr=await supabase.from('profiles').select('id,display_name,username,avatar_url').in('id',ids);
+      const map:Record<string,Prof|null>={}; (pr.data||[]).forEach((d:any)=>{ map[d.id]={ id:d.id, display_name:d.display_name, username:d.username, avatar_url:d.avatar_url };});
       setProfiles(map);
     }else{
       setProfiles({});

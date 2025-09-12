@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import VerifiedBadge from './VerifiedBadge';
 
-type Profile = { id:string; username:string|null; display_name:string|null; bio:string|null; location:string|null; website:string|null; avatar_url:string|null; banner_url:string|null; verified:boolean|null; created_at:string|null; avatar_version?:number|null };
+type Profile = { id:string; username:string|null; display_name:string|null; avatar_url:string|null; is_verified?:boolean|null };
 
 function Row({ icon, label, onPress }:{ icon:string; label:string; onPress:()=>void }) {
   return (
@@ -26,17 +26,15 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   const [loading,setLoading]=useState(true);
 
   async function refreshAuth(){
-    const u=await supabase.auth.getUser();
     const s=await supabase.auth.getSession();
-    const id=u.data?.user?.id??s.data?.session?.user?.id??null;
-    setMeId(id);
+    setMeId(s.data?.session?.user?.id??null);
   }
 
   useEffect(()=>{refreshAuth();},[]);
   useEffect(()=>{const sub=supabase.auth.onAuthStateChange(()=>{refreshAuth();});return()=>sub.data.subscription.unsubscribe();},[]);
 
   useEffect(()=>{ if(!meId){ setP(null); setCounts({following:0,followers:0,likes:0}); setLoading(false); return; } (async()=>{ setLoading(true);
-    const r=await supabase.from('user_profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version').eq('id',meId).maybeSingle();
+    const r=await supabase.from('profiles').select('id,username,display_name,avatar_url,is_verified').eq('id',meId).maybeSingle();
     if(r.data) setP(r.data as any);
     const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',meId);
     const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',meId);
@@ -61,7 +59,7 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
             <View>
               <View style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
                 <Text style={{ fontSize:18, fontWeight:'700' }}>{p.display_name||'User'}</Text>
-                {p.verified ? <VerifiedBadge size={16}/> : null}
+                {p.is_verified ? <VerifiedBadge size={16}/> : null}
               </View>
               <Text style={{ color:'#666' }}>@{p.username||'user'}</Text>
             </View>
