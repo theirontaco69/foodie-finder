@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, RefreshControl } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { supabase } from './lib/supabase';
+import { supabase } from '../lib/supabase';
 import TopBar from './components/TopBar';
 import NavBar from './components/NavBar';
 import AuthorHeader from './components/AuthorHeader';
