@@ -1,5 +1,6 @@
+
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,7 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { resolveAvatarPublicUrl, fallbackAvatar } from '../../lib/avatar';
 import VerifiedBadge from './VerifiedBadge';
 
-type Profile = { id:string; username:string|null; display_name:string|null; bio:string|null; location:string|null; website:string|null; avatar_url:string|null; banner_url:string|null; verified:boolean|null; created_at:string|null; avatar_version?:number|null };
+type Profile = { id:string; username:string|null; display_name:string|null; avatar_url:string|null; banner_url:string|null; verified:boolean|null; created_at:string|null; avatar_version?:number|null };
 
 function Row({ icon, label, onPress }:{ icon:string; label:string; onPress:()=>void }) {
   return (
@@ -25,29 +26,30 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   const [counts,setCounts]=useState({following:0,followers:0,likes:0});
   const [loading,setLoading]=useState(true);
 
-  async function loadProfile(uid:string){
-    setLoading(true);
-    const r=await supabase.from('user_profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version').eq('id',uid).maybeSingle();
-    if(r.data) setP(r.data as any);
-    const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',uid);
-    const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',uid);
-    let likes=0;
-    try{ const t=await supabase.rpc('total_likes_received',{author:uid}); likes=Number(t.data??0);}catch(e){}
-    setCounts({following:a.count||0,followers:b.count||0,likes});
-    setLoading(false);
-  }
+  useEffect(()=>{
+    let unsub: any;
+    (async()=>{
+      const u=await supabase.auth.getUser();
+      setMeId(u?.data?.user?.id??null);
+      const sub=supabase.auth.onAuthStateChange((_e,session)=>{ setMeId(session?.user?.id??null); });
+      unsub=sub?.data?.subscription?.unsubscribe?.bind(sub.data.subscription);
+    })();
+    return ()=>{ if (unsub) unsub(); };
+  },[]);
 
   useEffect(()=>{
-    let sub:any=null;
     (async()=>{
-      const s=await supabase.auth.getSession();
-      const uid=s?.data?.session?.user?.id||null;
-      setMeId(uid);
-      if(uid) loadProfile(uid); else { setP(null); setLoading(false); }
-      sub=supabase.auth.onAuthStateChange((_e,se)=>{ const id=se?.user?.id||null; setMeId(id); if(id) loadProfile(id); else { setP(null); setLoading(false);} });
+      if(!meId){ setP(null); setCounts({following:0,followers:0,likes:0}); setLoading(false); return; }
+      setLoading(true);
+      const r=await supabase.from('user_profiles').select('id,username,display_name,avatar_url,banner_url,verified,created_at,avatar_version').eq('id',meId).maybeSingle();
+      if(r.data) setP(r.data as any);
+      const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',meId);
+      const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',meId);
+      const t=await supabase.rpc('total_likes_received',{author:meId});
+      setCounts({following:a.count||0,followers:b.count||0,likes:Number(t.data??0)});
+      setLoading(false);
     })();
-    return()=>{ try{ sub?.data?.subscription?.unsubscribe?.(); }catch(e){} };
-  },[]);
+  },[meId]);
 
   function nav(path:string){ onClose(); router.push(path as any); }
   async function logout(){ await supabase.auth.signOut(); onClose(); router.replace('/login'); }
@@ -55,7 +57,7 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   const avatar=resolveAvatarPublicUrl(supabase, p?.avatar_url??null, { userId: p?.id??undefined, version: p?.avatar_version??undefined }) ?? (p?.display_name||p?.username ? fallbackAvatar(p?.display_name||p?.username) : null);
 
   return (
-    <SafeAreaView style={{ flex:1, backgroundColor:'#fff', paddingHorizontal:16 }}>
+    <View style={{ flex:1, backgroundColor:'#fff', paddingTop:60, paddingHorizontal:16 }}>
       {loading ? (
         <View style={{ alignItems:'center', justifyContent:'center', padding:20 }}><ActivityIndicator/></View>
       ) : meId && p ? (
@@ -93,6 +95,6 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
           <Row icon="person-add-outline" label="Create account" onPress={()=>nav('/login')} />
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
