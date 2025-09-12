@@ -16,12 +16,13 @@ export default function HomeFeed(){
   const [loading,setLoading]=useState(true);
   const [refreshing,setRefreshing]=useState(false);
 
+  const [liking, setLiking] = useState<string|null>(null);
   async function load(){
-    setLoading(true);
-    const r=await supabase.from('posts').select('id,author_id,is_video,media_urls,caption,created_at').order('created_at',{ascending:false}).limit(100);
-    setPosts(Array.isArray(r.data)?r.data:[]);
-    setLoading(false);
-  }
+  setLoading(true);
+  const r=await supabase.from('posts').select('id,author_id,is_video,media_urls,caption,created_at,likes_count').order('created_at',{ascending:false}).limit(100);
+  setPosts(Array.isArray(r.data)?r.data:[]);
+  setLoading(false);
+}
 
   useEffect(()=>{load();},[]);
   const onRefresh=async()=>{setRefreshing(true);await load();setRefreshing(false);};
@@ -43,21 +44,46 @@ export default function HomeFeed(){
                 </View>
                 {p.caption ? <Text style={{ marginTop:8 }}>{p.caption}</Text> : null}
                 <View style={{ flexDirection:'row', alignItems:'center', gap:24, marginTop:12 }}>
-                  <Pressable onPress={()=>router.push('/post/'+p.id)} style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
-                    <Ionicons name="chatbubble-ellipses-outline" size={20} color="#111" />
-                    <Text>Comments</Text>
-                  </Pressable>
-                  <Pressable onPress={()=>router.push('/post/'+p.id)} style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
-                    <Ionicons name="repeat-outline" size={20} color="#111" />
-                    <Text>Repost</Text>
-                  </Pressable>
-                </View>
+  <Pressable onPress={()=>router.push('/post/'+p.id)} style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
+    <Ionicons name="chatbubble-ellipses-outline" size={20} color="#111" />
+    <Text>Comment</Text>
+  </Pressable>
+  <Pressable onPress={()=>doRepost(p.id)} style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
+    <Ionicons name="repeat-outline" size={20} color="#111" />
+    <Text>Repost</Text>
+  </Pressable>
+  <Pressable disabled={liking===p.id} onPress={()=>toggleLike(p.id)} style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
+    <Ionicons name="heart-outline" size={20} color="#111" />
+    <Text>{(p as any).likes_count ?? 0}</Text>
+  </Pressable>
+</View>
               </View>
             ))}
           </View>
         )}
       </ScrollView>
       <NavBar />
-    </View>
-  );
+    
+  async function toggleLike(postId:string){
+    const me=(await supabase.auth.getUser())?.data?.user?.id||null;
+    if(!me) return;
+    setLiking(postId);
+    try{
+      const liked=await supabase.from('post_likes').select('post_id').eq('post_id',postId).eq('user_id',me).maybeSingle();
+      if(liked.data){
+        await supabase.from('post_likes').delete().eq('post_id',postId).eq('user_id',me);
+        setPosts(ps=>ps.map(x=> x.id===postId ? { ...x, likes_count: Math.max(0,(x as any).likes_count||0)-1 } : x));
+      }else{
+        await supabase.from('post_likes').insert({ post_id: postId, user_id: me });
+        setPosts(ps=>ps.map(x=> x.id===postId ? { ...x, likes_count: ((x as any).likes_count||0)+1 } : x));
+      }
+    } finally { setLiking(null); }
+  }
+
+  async function doRepost(postId:string){
+    const me=(await supabase.auth.getUser())?.data?.user?.id||null;
+    if(!me) return;
+    try{ await supabase.from('reposts').insert({ post_id: postId, user_id: me }); }catch(e){}
+  }
+</View>);
 }
