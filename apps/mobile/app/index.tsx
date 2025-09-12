@@ -26,7 +26,7 @@ export default function HomeFeed(){
   return(
     <View style={{ flex:1, paddingBottom:96 }}>
       <TopBar />
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={{ padding:16, paddingBottom:120 }}>
+      <ScrollView contentContainerStyle={{ padding:16, paddingBottom:120 }}>
         {loading ? <Text>Loading…</Text> : posts.length===0 ? <Text>No posts yet.</Text> : (
           <View style={{ gap:16 }}>
             {posts.map(p=>(
@@ -39,6 +39,16 @@ export default function HomeFeed(){
                   ))}
                 </View>
                 {p.caption ? <Text style={{ marginTop:8 }}>{p.caption}</Text> : null}
+                <View style={{ flexDirection:'row', alignItems:'center', gap:24, marginTop:12 }}>
+                  <Pressable onPress={()=>router.push('/post/'+p.id)} style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
+                    <Ionicons name="chatbubble-ellipses-outline" size={20} color="#111" />
+                    <Text>Comments</Text>
+                  </Pressable>
+                  <Pressable onPress={()=>router.push('/post/'+p.id)} style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
+                    <Ionicons name="repeat-outline" size={20} color="#111" />
+                    <Text>Repost</Text>
+                  </Pressable>
+                </View>
               </View>
             ))}
           </View>

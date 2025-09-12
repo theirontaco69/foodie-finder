@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
@@ -25,11 +26,11 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   const [counts,setCounts]=useState({following:0,followers:0,likes:0});
   const [loading,setLoading]=useState(true);
 
-  useEffect(()=>{let unsub=()=>{};(async()=>{const s=await supabase.auth.getSession();setMeId(s.data?.session?.user?.id??null);unsub=supabase.auth.onAuthStateChange((_e,session)=>{setMeId(session?.user?.id??null);}).data?.subscription?.unsubscribe||(()=>{});})();return()=>{try{unsub();}catch{}}},[]);
-  useEffect(()=>{ if(!meId){ setP(null); setCounts({following:0,followers:0,likes:0}); setLoading(false); return; } (async()=>{ setLoading(true); const r=await supabase.from('user_profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version').eq('id',meId).maybeSingle(); if(r.data) setP(r.data as any); const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',meId); const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',meId); let tl=0; try{ const t=await supabase.rpc('total_likes_received',{author:meId}); tl=Number(t.data??0);}catch{} setCounts({following:a.count||0,followers:b.count||0,likes:tl}); setLoading(false); })(); },[meId]);
+  useEffect(()=>{let unsub=()=>{};(async()=>{const s=await supabase.auth.getSession();setMeId(s.data?.session?.user?.id??null);const sub=supabase.auth.onAuthStateChange((_e,session)=>{setMeId(session?.user?.id??null)});unsub=()=>sub.data.subscription.unsubscribe();})();return()=>{try{unsub()}catch{}}},[]);
+  useEffect(()=>{ if(!meId){ setP(null); setCounts({following:0,followers:0,likes:0}); setLoading(false); return; } (async()=>{ setLoading(true); const r=await supabase.from('user_profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version').eq('id',meId).maybeSingle(); if(r.data) setP(r.data as any); const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',meId); const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',meId); let tl=0; try{ const t=await supabase.rpc('total_likes_received',{author:meId}); tl=Number(t.data??0)}catch{} setCounts({following:a.count||0,followers:b.count||0,likes:tl}); setLoading(false) })() },[meId]);
 
-  function nav(path:string){ onClose(); router.push(path as any); }
-  async function logout(){ await supabase.auth.signOut(); onClose(); router.replace('/login'); }
+  function nav(path:string){ onClose(); router.push(path as any) }
+  async function logout(){ await supabase.auth.signOut(); onClose(); router.replace('/login') }
 
   const avatar=resolveAvatarPublicUrl(supabase, p?.avatar_url??null, { userId: p?.id??undefined, version: p?.avatar_version??undefined }) ?? (p?.display_name||p?.username ? fallbackAvatar(p?.display_name||p?.username) : null);
 
@@ -51,13 +52,11 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
               <Text style={{ color:'#666' }}>@{p.username||'user'}</Text>
             </View>
           </View>
-
           <View style={{ flexDirection:'row', gap:16 }}>
             <Text><Text style={{ fontWeight:'700' }}>{counts.following}</Text> Following</Text>
             <Text><Text style={{ fontWeight:'700' }}>{counts.followers}</Text> Followers</Text>
             <Text><Text style={{ fontWeight:'700' }}>{counts.likes}</Text> Likes</Text>
           </View>
-
           <View style={{ height:8 }} />
           <Row icon="person-outline" label="Profile" onPress={()=>nav('/profile')} />
           <Row icon="search-outline" label="Search" onPress={()=>nav('/search')} />

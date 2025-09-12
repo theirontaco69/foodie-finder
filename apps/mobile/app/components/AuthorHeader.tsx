@@ -14,7 +14,7 @@ export default function AuthorHeader({ userId, initial }: { userId:string; initi
 
   useEffect(()=>{ if(initial){ const u=resolveAvatarPublicUrl(supabase, initial.avatar_url??null,{userId,version:initial.avatar_version??undefined})??(initial.display_name||initial.username?fallbackAvatar(initial.display_name||initial.username):null); setUrl(u??null);} },[initial?.avatar_url,initial?.avatar_version,initial?.display_name,initial?.username,userId]);
 
-  useEffect(()=>{ let c=false;(async()=>{ const r=await supabase.from('user_profiles').select('id, display_name, username, avatar_url, avatar_version').eq('id',userId).maybeSingle(); if(c) return; if(r.data){ setP(r.data as any); const u=resolveAvatarPublicUrl(supabase,r.data.avatar_url??null,{userId,version:r.data.avatar_version??undefined})??(r.data.display_name||r.data.username?fallbackAvatar(r.data.display_name||r.data.username):null); setUrl(u??null);} })(); return()=>{c=true}; },[userId]);
+  useEffect(()=>{ let c=false;(async()=>{ const r=await supabase.from('user_profiles').select('id, display_name, username, avatar_url, avatar_version, verified').eq('id',userId).maybeSingle(); if(c) return; if(r.data){ setP(r.data as any); const u=resolveAvatarPublicUrl(supabase,r.data.avatar_url??null,{userId,version:r.data.avatar_version??undefined})??(r.data.display_name||r.data.username?fallbackAvatar(r.data.display_name||r.data.username):null); setUrl(u??null);} })(); return()=>{c=true}; },[userId]);
 
   const name=p?.display_name||'User';
   const handle=p?.username?'@'+p.username:'@user';
