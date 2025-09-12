@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable,  View, Text, ScrollView, RefreshControl } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import { supabase } from '../lib/supabase';
 import TopBar from './components/TopBar';
@@ -10,6 +11,7 @@ import AuthorHeader from './components/AuthorHeader';
 type Post = { id:string; author_id:string; is_video:boolean; media_urls:string[]; caption:string|null; created_at:string };
 
 export default function HomeFeed(){
+  const router = useRouter();
   const [posts,setPosts]=useState<Post[]>([]);
   const [loading,setLoading]=useState(true);
   const [refreshing,setRefreshing]=useState(false);
@@ -27,7 +29,7 @@ export default function HomeFeed(){
   return(
     <View style={{ flex:1, paddingBottom:96 }}>
       <TopBar />
-      <ScrollView contentContainerStyle={{ padding:16, paddingBottom:120 }}>
+      <ScrollView contentContainerStyle={{ padding:16, paddingBottom:120 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         {loading ? <Text>Loading…</Text> : posts.length===0 ? <Text>No posts yet.</Text> : (
           <View style={{ gap:16 }}>
             {posts.map(p=>(
