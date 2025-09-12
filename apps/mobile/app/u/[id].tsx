@@ -25,7 +25,7 @@ export default function PublicProfile() {
   const [isFollowing,setIsFollowing]=useState(false);
   const [followsYou,setFollowsYou]=useState(false);
 
-  useEffect(()=>{(async()=>{const a=await supabase.auth.getUser(); setMeId(a?.data?.user?.id??null);})();},[]);
+  useEffect(()=>{(async()=>{const s=await supabase.auth.getSession(); setMeId(s.data?.session?.user?.id??null);})();},[]);
 
   useEffect(()=>{ if(!id) return; (async()=>{ setLoading(true);
     const prof = await supabase.from('user_profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version').eq('id',String(id)).maybeSingle();
@@ -79,7 +79,7 @@ export default function PublicProfile() {
           </View>
           <View style={{ flexDirection:'row', alignItems:'center', gap:8 }}>
             <Text style={{ color:'#666' }}>@{p.username||'user'}</Text>
-            {followsYou ? <Text style={{ color:'#666', fontSize:12 }}>Follows you</Text> : null}
+            {followsYou ? <Text style={{ color:'#06f' }}>Follows you</Text> : null}
           </View>
           {p.bio ? <Text style={{ marginTop:8 }}>{p.bio}</Text> : null}
 
