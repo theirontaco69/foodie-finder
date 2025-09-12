@@ -5,9 +5,10 @@ import { Image as ExpoImage } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
+import { resolveAvatarPublicUrl, fallbackAvatar } from '../../lib/avatar';
 import VerifiedBadge from './VerifiedBadge';
 
-type Profile = { id:string; username:string|null; display_name:string|null; avatar_url:string|null; is_verified?:boolean|null };
+type Profile = { id:string; username:string|null; display_name:string|null; avatar_url:string|null; avatar_version?:number|null; is_verified?:boolean|null };
 
 function Row({ icon, label, onPress }:{ icon:string; label:string; onPress:()=>void }) {
   return (
@@ -25,16 +26,12 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   const [counts,setCounts]=useState({following:0,followers:0,likes:0});
   const [loading,setLoading]=useState(true);
 
-  async function refreshAuth(){
-    const s=await supabase.auth.getSession();
-    setMeId(s.data?.session?.user?.id??null);
-  }
-
+  async function refreshAuth(){ const s=await supabase.auth.getSession(); setMeId(s.data?.session?.user?.id??null); }
   useEffect(()=>{refreshAuth();},[]);
   useEffect(()=>{const sub=supabase.auth.onAuthStateChange(()=>{refreshAuth();});return()=>sub.data.subscription.unsubscribe();},[]);
 
   useEffect(()=>{ if(!meId){ setP(null); setCounts({following:0,followers:0,likes:0}); setLoading(false); return; } (async()=>{ setLoading(true);
-    const r=await supabase.from('profiles').select('id,username,display_name,avatar_url,is_verified').eq('id',meId).maybeSingle();
+    const r=await supabase.from('profiles').select('id,username,display_name,avatar_url,avatar_version,is_verified').eq('id',meId).maybeSingle();
     if(r.data) setP(r.data as any);
     const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',meId);
     const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',meId);
@@ -46,6 +43,8 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   function nav(path:string){ onClose(); router.push(path as any); }
   async function logout(){ await supabase.auth.signOut(); onClose(); router.replace('/login'); }
 
+  const avatar=resolveAvatarPublicUrl(supabase, p?.avatar_url??null, { userId: p?.id??undefined, version: p?.avatar_version??undefined }) ?? (p?.display_name||p?.username ? fallbackAvatar(p?.display_name||p?.username) : null);
+
   return (
     <View style={{ flex:1, backgroundColor:'#fff', paddingTop:60, paddingHorizontal:16 }}>
       {loading ? (
@@ -54,11 +53,11 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
         <View style={{ gap:16 }}>
           <View style={{ flexDirection:'row', alignItems:'center', gap:12 }}>
             <View style={{ width:56, height:56, borderRadius:28, overflow:'hidden', backgroundColor:'#eee' }}>
-              {p.avatar_url ? <ExpoImage source={{ uri: p.avatar_url }} style={{ width:'100%', height:'100%' }} contentFit="cover" /> : null}
+              {avatar ? <ExpoImage source={{ uri: avatar }} style={{ width:'100%', height:'100%' }} contentFit="cover" /> : null}
             </View>
             <View>
               <View style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
-                <Text style={{ fontSize:18, fontWeight:'700' }}>{p.display_name||'User'}</Text>
+                <Text style={{ fontSize:18, fontWeight:'700' }}>{p.display_name||p.username||'User'}</Text>
                 {p.is_verified ? <VerifiedBadge size={16}/> : null}
               </View>
               <Text style={{ color:'#666' }}>@{p.username||'user'}</Text>

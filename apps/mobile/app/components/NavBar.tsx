@@ -33,7 +33,7 @@ export default function NavBar({ scrollY }: Props) {
           position: 'absolute',
           left: 0, right: 0, bottom: 0,
           height,
-          backgroundColor: '#fff',
+          backgroundColor: 'rgba(255,255,255,0.9)',
           borderTopWidth: 1, borderColor: '#eee',
           opacity: bgOpacity
         }}
