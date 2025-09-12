@@ -13,7 +13,6 @@ type Post = { id:string; author_id:string; is_video:boolean; media_urls:string[]
 
 export default function HomeFeed(){
   const router = useRouter();
-  const router=useRouter();
   const [posts,setPosts]=useState<Post[]>([]);
   const [loading,setLoading]=useState(true);
   const [refreshing,setRefreshing]=useState(false);
