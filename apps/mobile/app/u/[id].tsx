@@ -1,9 +1,8 @@
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import VerifiedBadge from '../components/VerifiedBadge';
 import TopBar from '../components/TopBar';
@@ -15,43 +14,40 @@ type Post = { id:string; author_id:string; is_video:boolean; media_urls:string[]
 
 export default function PublicProfile() {
   const { id } = useLocalSearchParams<{ id:string }>();
-  const router=useRouter();
   const [profile,setProfile]=useState<Profile|null>(null);
   const [loading,setLoading]=useState(true);
   const [counts,setCounts]=useState({ following:0, followers:0, likes:0 });
   const [posts,setPosts]=useState<Post[]>([]);
   const [amFollowing,setAmFollowing]=useState(false);
 
-  async function fetchProfileById(pid:string){
-    const a=await supabase.from('profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified:is_verified,created_at,avatar_version').eq('id',pid).maybeSingle();
-    if(a.data) return a.data as any;
-    const b=await supabase.from('user_profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version').eq('id',pid).maybeSingle();
-    return b.data as any || null;
+  async function load(pid:string){
+    setLoading(true);
+    let p:any=null;
+    const a=await supabase.from('user_profiles').select('id,username,display_name,bio,location,website,avatar_url,banner_url,verified,created_at,avatar_version').eq('id',pid).maybeSingle();
+    if(a.data) p=a.data;
+    if(!p){
+      const b=await supabase.from('profiles').select('id,username,display_name,avatar_url,banner_url,verified:is_verified,created_at,avatar_version').eq('id',pid).maybeSingle();
+      if(b.data) p={...b.data,bio:null,location:null,website:null};
+    }
+    if(!p){ setProfile(null); setLoading(false); return; }
+    setProfile(p as any);
+    const f1=await supabase.from('follows').select('id',{ count:'exact', head:true }).eq('follower_id', p.id);
+    const f2=await supabase.from('follows').select('id',{ count:'exact', head:true }).eq('followee_id', p.id);
+    const tl=await supabase.rpc('total_likes_received',{ author: p.id });
+    setCounts({ following: f1.count||0, followers: f2.count||0, likes: Number(tl.data??0) });
+    const r=await supabase.from('posts').select('id,author_id,is_video,media_urls,caption,created_at').eq('author_id', p.id).order('created_at',{ascending:false}).limit(100);
+    setPosts((r.data as any[])||[]);
+    const me=(await supabase.auth.getUser())?.data?.user?.id||null;
+    if(me){
+      const af=await supabase.from('follows').select('id').eq('follower_id', me).eq('followee_id', p.id).maybeSingle();
+      setAmFollowing(!!af.data);
+    } else {
+      setAmFollowing(false);
+    }
+    setLoading(false);
   }
 
-  useEffect(()=>{
-    if(!id) return;
-    (async()=>{
-      setLoading(true);
-      const p=await fetchProfileById(String(id));
-      if(!p){ setProfile(null); setLoading(false); return; }
-      setProfile(p);
-      const f1=await supabase.from('follows').select('id',{ count:'exact', head:true }).eq('follower_id', p.id);
-      const f2=await supabase.from('follows').select('id',{ count:'exact', head:true }).eq('followee_id', p.id);
-      const tl=await supabase.rpc('total_likes_received',{ author: p.id });
-      setCounts({ following: f1.count||0, followers: f2.count||0, likes: Number(tl.data??0) });
-      const r=await supabase.from('posts').select('id,author_id,is_video,media_urls,caption,created_at').eq('author_id', p.id).order('created_at',{ascending:false}).limit(100);
-      setPosts((r.data as any[])||[]);
-      const me=(await supabase.auth.getUser())?.data?.user?.id||null;
-      if(me){
-        const af=await supabase.from('follows').select('id').eq('follower_id', me).eq('followee_id', p.id).maybeSingle();
-        setAmFollowing(!!af.data);
-      } else {
-        setAmFollowing(false);
-      }
-      setLoading(false);
-    })();
-  },[id]);
+  useEffect(()=>{ if(id) load(String(id)); },[id]);
 
   async function toggleFollow(){
     const me=(await supabase.auth.getUser())?.data?.user?.id||null;
@@ -113,13 +109,11 @@ export default function PublicProfile() {
           </View>
           <Text style={{ color:'#666' }}>@{profile.username || 'user'}</Text>
           {profile.bio ? <Text style={{ marginTop:8 }}>{profile.bio}</Text> : null}
-
           <View style={{ flexDirection:'row', gap:16, marginTop:10 }}>
             <Text><Text style={{ fontWeight:'700' }}>{counts.following}</Text> Following</Text>
             <Text><Text style={{ fontWeight:'700' }}>{counts.followers}</Text> Followers</Text>
             <Text><Text style={{ fontWeight:'700' }}>{counts.likes}</Text> Likes</Text>
           </View>
-
           <View style={{ height:16 }} />
           <Text style={{ fontSize:16, fontWeight:'700', marginBottom:8 }}>Posts</Text>
           {posts.length===0 ? (

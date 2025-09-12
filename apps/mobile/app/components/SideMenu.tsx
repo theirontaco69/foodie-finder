@@ -26,15 +26,15 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   const [counts,setCounts]=useState({following:0,followers:0,likes:0});
   const [loading,setLoading]=useState(true);
 
+  async function refreshAuth(){
+    const u=await supabase.auth.getUser();
+    setMeId(u?.data?.user?.id??null);
+  }
+
   useEffect(()=>{
-    let unsub:any;
-    (async()=>{
-      const s=await supabase.auth.getSession();
-      setMeId(s?.data?.session?.user?.id??null);
-      const r=supabase.auth.onAuthStateChange((_e,session)=>{ setMeId(session?.user?.id??null); });
-      unsub=r?.data?.subscription?.unsubscribe?.bind(r.data.subscription);
-    })();
-    return ()=>{ if(unsub) unsub(); };
+    refreshAuth();
+    const { data } = supabase.auth.onAuthStateChange(()=>refreshAuth());
+    return ()=>{ data.subscription.unsubscribe(); };
   },[]);
 
   useEffect(()=>{
@@ -49,7 +49,7 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
       setCounts({following:a.count||0,followers:b.count||0,likes:Number(t.data??0)});
       setLoading(false);
     })();
-  },[meId]);
+  },[meId, open]);
 
   function nav(path:string){ onClose(); router.push(path as any); }
   async function logout(){ await supabase.auth.signOut(); onClose(); router.replace('/login'); }

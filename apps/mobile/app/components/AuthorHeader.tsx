@@ -18,30 +18,28 @@ export default function AuthorHeader({ userId, initial }: { userId: string; init
 
   useEffect(()=>{
     let cancelled=false;
-    async function fetchProfile(table:string){
-      const r=await supabase.from(table).select(table==='profiles' ? 'id,username,display_name,avatar_url,verified:is_verified,avatar_version' : 'id,username,display_name,avatar_url,verified,avatar_version').eq('id',userId).maybeSingle();
-      return r.data as any || null;
-    }
     (async()=>{
       let prof: any = null;
-      if(!p || p.display_name==null || p.username==null){
-        prof = await fetchProfile('profiles');
-        if(!prof) prof = await fetchProfile('user_profiles');
-        if(cancelled) return;
-        if(prof){
-          const normalized:Profile={ id:prof.id, username:prof.username, display_name:prof.display_name, avatar_url:prof.avatar_url, verified:prof.verified??null, avatar_version:prof.avatar_version??undefined };
-          setP(normalized);
-          setProfileInCache({ id: normalized.id, username: normalized.username, display_name: normalized.display_name, avatar_url: normalized.avatar_url });
-        }
+      const r1=await supabase.from('user_profiles').select('id,username,display_name,avatar_url,verified,avatar_version').eq('id',userId).maybeSingle();
+      if(r1.data) prof=r1.data;
+      if(!prof){
+        const r2=await supabase.from('profiles').select('id,username,display_name,avatar_url,verified:is_verified,avatar_version').eq('id',userId).maybeSingle();
+        if(r2.data) prof=r2.data;
       }
-      const base=prof||p;
-      if(base){
-        const url=resolveAvatarPublicUrl(supabase, base.avatar_url, { userId: base.id, version: base.avatar_version }) ?? (base.display_name||base.username ? fallbackAvatar(base.display_name||base.username) : '');
-        setAvatar(url||'');
+      if(cancelled) return;
+      if(prof){
+        const normalized:Profile={ id:prof.id, username:prof.username, display_name:prof.display_name, avatar_url:prof.avatar_url, verified:prof.verified??null, avatar_version:prof.avatar_version??undefined };
+        setP(normalized);
+        setProfileInCache({ id: normalized.id, username: normalized.username, display_name: normalized.display_name, avatar_url: normalized.avatar_url });
+        const finalUrl=resolveAvatarPublicUrl(supabase, normalized.avatar_url, { userId: normalized.id, version: normalized.avatar_version }) ?? (normalized.display_name||normalized.username ? fallbackAvatar(normalized.display_name||normalized.username) : '');
+        setAvatar(finalUrl||'');
+      } else {
+        setP(null);
+        setAvatar('');
       }
     })();
     return ()=>{cancelled=true};
-  },[userId, p?.avatar_url]);
+  },[userId]);
 
   const name=p?.display_name||'User';
   const username=p?.username ? '@'+p.username : '@user';
