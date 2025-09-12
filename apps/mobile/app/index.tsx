@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
+import { Pressable,  View, Text, ScrollView, RefreshControl } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { supabase } from '../lib/supabase';
 import TopBar from './components/TopBar';
