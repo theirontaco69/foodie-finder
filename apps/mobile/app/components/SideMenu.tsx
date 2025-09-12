@@ -27,12 +27,17 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
 
   async function refreshSession(){
     const s=await supabase.auth.getSession();
-    setMeId(s.data?.session?.user?.id??null);
+    const id=s.data?.session?.user?.id??null;
+    setMeId(id);
+    return id;
   }
 
   useEffect(()=>{ refreshSession(); },[]);
-  useEffect(()=>{ const sub=supabase.auth.onAuthStateChange(()=>{ refreshSession(); }); return ()=>sub.data.subscription.unsubscribe(); },[]);
-  useEffect(()=>{ refreshSession(); },[open]);
+  useEffect(()=>{
+    const sub=supabase.auth.onAuthStateChange(async()=>{ await refreshSession(); });
+    return ()=>sub.data.subscription.unsubscribe();
+  },[]);
+  useEffect(()=>{ if(open) refreshSession(); },[open]);
 
   useEffect(()=>{
     (async()=>{
@@ -43,13 +48,8 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
         return;
       }
       setLoading(true);
-      const r=await supabase
-        .from('user_profiles')
-        .select('id,username,display_name,avatar_url,avatar_version,verified')
-        .eq('id',meId)
-        .maybeSingle();
+      const r=await supabase.from('user_profiles').select('id,username,display_name,avatar_url,avatar_version,verified').eq('id',meId).maybeSingle();
       if(r.data) setP(r.data as any);
-
       const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',meId);
       const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',meId);
       const t=await supabase.rpc('total_likes_received',{ author: meId });
