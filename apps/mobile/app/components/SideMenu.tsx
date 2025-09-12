@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
@@ -8,7 +7,7 @@ import { supabase } from '../../lib/supabase';
 import { resolveAvatarPublicUrl, fallbackAvatar } from '../../lib/avatar';
 import VerifiedBadge from './VerifiedBadge';
 
-type Profile = { id:string; username:string|null; display_name:string|null; avatar_url:string|null; avatar_version?:number|null; is_verified?:boolean|null };
+type Profile = { id:string; username:string|null; display_name:string|null; avatar_url:string|null; avatar_version?:number|null; verified?:boolean|null };
 
 function Row({ icon, label, onPress }:{ icon:string; label:string; onPress:()=>void }) {
   return (
@@ -26,19 +25,38 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   const [counts,setCounts]=useState({following:0,followers:0,likes:0});
   const [loading,setLoading]=useState(true);
 
-  async function refreshAuth(){ const s=await supabase.auth.getSession(); setMeId(s.data?.session?.user?.id??null); }
-  useEffect(()=>{refreshAuth();},[]);
-  useEffect(()=>{const sub=supabase.auth.onAuthStateChange(()=>{refreshAuth();});return()=>sub.data.subscription.unsubscribe();},[]);
+  async function refreshSession(){
+    const s=await supabase.auth.getSession();
+    setMeId(s.data?.session?.user?.id??null);
+  }
 
-  useEffect(()=>{ if(!meId){ setP(null); setCounts({following:0,followers:0,likes:0}); setLoading(false); return; } (async()=>{ setLoading(true);
-    const r=await supabase.from('profiles').select('id,username,display_name,avatar_url,avatar_version,is_verified').eq('id',meId).maybeSingle();
-    if(r.data) setP(r.data as any);
-    const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',meId);
-    const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',meId);
-    const t=await supabase.rpc('total_likes_received',{author:meId});
-    setCounts({following:a.count||0,followers:b.count||0,likes:Number(t.data??0)});
-    setLoading(false);
-  })(); },[meId,open]);
+  useEffect(()=>{ refreshSession(); },[]);
+  useEffect(()=>{ const sub=supabase.auth.onAuthStateChange(()=>{ refreshSession(); }); return ()=>sub.data.subscription.unsubscribe(); },[]);
+  useEffect(()=>{ refreshSession(); },[open]);
+
+  useEffect(()=>{
+    (async()=>{
+      if(!meId){
+        setP(null);
+        setCounts({following:0,followers:0,likes:0});
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      const r=await supabase
+        .from('user_profiles')
+        .select('id,username,display_name,avatar_url,avatar_version,verified')
+        .eq('id',meId)
+        .maybeSingle();
+      if(r.data) setP(r.data as any);
+
+      const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',meId);
+      const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',meId);
+      const t=await supabase.rpc('total_likes_received',{ author: meId });
+      setCounts({ following:a.count||0, followers:b.count||0, likes:Number(t.data??0) });
+      setLoading(false);
+    })();
+  },[meId]);
 
   function nav(path:string){ onClose(); router.push(path as any); }
   async function logout(){ await supabase.auth.signOut(); onClose(); router.replace('/login'); }
@@ -58,7 +76,7 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
             <View>
               <View style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
                 <Text style={{ fontSize:18, fontWeight:'700' }}>{p.display_name||p.username||'User'}</Text>
-                {p.is_verified ? <VerifiedBadge size={16}/> : null}
+                {p.verified ? <VerifiedBadge size={16}/> : null}
               </View>
               <Text style={{ color:'#666' }}>@{p.username||'user'}</Text>
             </View>
