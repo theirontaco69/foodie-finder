@@ -5,7 +5,6 @@ import { Image as ExpoImage } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
-import { resolveAvatarPublicUrl, fallbackAvatar } from '../../lib/avatar';
 import VerifiedBadge from './VerifiedBadge';
 
 type Profile = { id:string; username:string|null; display_name:string|null; bio:string|null; location:string|null; website:string|null; avatar_url:string|null; banner_url:string|null; verified:boolean|null; created_at:string|null; avatar_version?:number|null };
@@ -42,8 +41,6 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   function nav(path:string){ onClose(); router.push(path as any); }
   async function logout(){ await supabase.auth.signOut(); onClose(); router.replace('/login'); }
 
-  const avatar=resolveAvatarPublicUrl(supabase, p?.avatar_url??null, { userId: p?.id??undefined, version: p?.avatar_version??undefined }) ?? (p?.display_name||p?.username ? fallbackAvatar(p?.display_name||p?.username) : null);
-
   return (
     <View style={{ flex:1, backgroundColor:'#fff', paddingTop:60, paddingHorizontal:16 }}>
       {loading ? (
@@ -52,7 +49,7 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
         <View style={{ gap:16 }}>
           <View style={{ flexDirection:'row', alignItems:'center', gap:12 }}>
             <View style={{ width:56, height:56, borderRadius:28, overflow:'hidden', backgroundColor:'#eee' }}>
-              {avatar ? <ExpoImage source={{ uri: avatar }} style={{ width:'100%', height:'100%' }} contentFit="cover" /> : null}
+              {p.avatar_url ? <ExpoImage source={{ uri: p.avatar_url }} style={{ width:'100%', height:'100%' }} contentFit="cover" /> : null}
             </View>
             <View>
               <View style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
