@@ -26,22 +26,15 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   const [counts,setCounts]=useState({following:0,followers:0,likes:0});
   const [loading,setLoading]=useState(true);
 
-  async function refreshSession(){
-    const s=await supabase.auth.getSession();
-    setMeId(s?.data?.session?.user?.id ?? null);
-  }
-
   useEffect(()=>{
-    refreshSession();
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session)=>{
-      setMeId(session?.user?.id ?? null);
-    });
-    return ()=>{ sub.subscription.unsubscribe(); };
+    (async()=>{ const u=await supabase.auth.getUser(); setMeId(u?.data?.user?.id??null) })();
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session)=>{ setMeId(session?.user?.id ?? null) });
+    return ()=>{ sub.subscription.unsubscribe() };
   },[]);
 
   useEffect(()=>{
     (async()=>{
-      if(!meId){ setP(null); setCounts({following:0,followers:0,likes:0}); setLoading(false); return; }
+      if(!meId){ setP(null); setCounts({following:0,followers:0,likes:0}); setLoading(false); return }
       setLoading(true);
       const r=await supabase.from('user_profiles').select('id,username,display_name,avatar_url,verified,created_at,avatar_version').eq('id',meId).maybeSingle();
       if(r.data) setP(r.data as any);
@@ -51,12 +44,12 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
       setCounts({following:a.count||0,followers:b.count||0,likes:Number(t.data??0)});
       setLoading(false);
     })();
-  },[meId, open]);
+  },[meId,open]);
 
-  function nav(path:string){ onClose(); router.push(path as any); }
-  async function logout(){ await supabase.auth.signOut(); onClose(); router.replace('/login'); }
+  function nav(path:string){ onClose(); router.push(path as any) }
+  async function logout(){ await supabase.auth.signOut(); onClose(); router.replace('/login') }
 
-  const avatar=resolveAvatarPublicUrl(supabase, p?.avatar_url??null, { userId: p?.id??undefined, version: p?.avatar_version??undefined }) ?? (p?.display_name||p?.username ? fallbackAvatar(p?.display_name||p?.username) : null);
+  const avatar=resolveAvatarPublicUrl(supabase, p?.avatar_url??null, { userId:p?.id??undefined, version:p?.avatar_version??undefined }) ?? (p?.display_name||p?.username ? fallbackAvatar(p?.display_name||p?.username) : null);
 
   return (
     <View style={{ flex:1, backgroundColor:'#fff', paddingTop:60, paddingHorizontal:16 }}>
