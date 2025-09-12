@@ -27,7 +27,7 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   const [loading,setLoading]=useState(true);
 
   useEffect(()=>{
-    (async()=>{ const u=await supabase.auth.getUser(); setMeId(u?.data?.user?.id??null) })();
+    supabase.auth.getSession().then(r=>setMeId(r.data?.session?.user?.id??null));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session)=>{ setMeId(session?.user?.id ?? null) });
     return ()=>{ sub.subscription.unsubscribe() };
   },[]);
@@ -40,8 +40,8 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
       if(r.data) setP(r.data as any);
       const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',meId);
       const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',meId);
-      const t=await supabase.rpc('total_likes_received',{author:meId});
-      setCounts({following:a.count||0,followers:b.count||0,likes:Number(t.data??0)});
+      const t=await supabase.from('post_likes').select('id,posts!inner(author_id)',{count:'exact',head:true}).eq('posts.author_id',meId);
+      setCounts({following:a.count||0,followers:b.count||0,likes:t.count||0});
       setLoading(false);
     })();
   },[meId,open]);

@@ -24,7 +24,7 @@ export default function PublicProfile(){
   const [following,setFollowing]=useState<boolean|null>(null);
   const [loading,setLoading]=useState(true);
 
-  useEffect(()=>{ supabase.auth.getUser().then(r=>setMe(r.data?.user?.id??null)) },[]);
+  useEffect(()=>{ supabase.auth.getSession().then(r=>setMe(r.data?.session?.user?.id??null)) },[]);
 
   useEffect(()=>{
     if(!id) return;
@@ -34,8 +34,8 @@ export default function PublicProfile(){
       if(r.data) setProfile(r.data as any);
       const a=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('follower_id',String(id));
       const b=await supabase.from('follows').select('id',{count:'exact',head:true}).eq('followee_id',String(id));
-      const t=await supabase.rpc('total_likes_received',{author:String(id)});
-      setCounts({following:a.count||0, followers:b.count||0, likes:Number(t.data??0)});
+      const t=await supabase.from('post_likes').select('id,posts!inner(author_id)',{count:'exact',head:true}).eq('posts.author_id',String(id));
+      setCounts({following:a.count||0, followers:b.count||0, likes:t.count||0});
       const fp=await supabase.from('posts').select('id,author_id,is_video,media_urls,caption,created_at').eq('author_id',String(id)).order('created_at',{ascending:false}).limit(100);
       setPosts(Array.isArray(fp.data)?fp.data:[]);
       if(me){ const f=await supabase.from('follows').select('id').eq('follower_id',me).eq('followee_id',String(id)).maybeSingle(); setFollowing(!!f.data) }
