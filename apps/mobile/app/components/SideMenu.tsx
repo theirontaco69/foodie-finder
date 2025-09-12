@@ -26,15 +26,17 @@ export default function SideMenu({ open, onClose }:{ open:boolean; onClose:()=>v
   const [counts,setCounts]=useState({following:0,followers:0,likes:0});
   const [loading,setLoading]=useState(true);
 
-  async function refreshAuth(){
-    const u=await supabase.auth.getUser();
-    setMeId(u?.data?.user?.id??null);
+  async function refreshSession(){
+    const s=await supabase.auth.getSession();
+    setMeId(s?.data?.session?.user?.id ?? null);
   }
 
   useEffect(()=>{
-    refreshAuth();
-    const { data } = supabase.auth.onAuthStateChange(()=>refreshAuth());
-    return ()=>{ data.subscription.unsubscribe(); };
+    refreshSession();
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session)=>{
+      setMeId(session?.user?.id ?? null);
+    });
+    return ()=>{ sub.subscription.unsubscribe(); };
   },[]);
 
   useEffect(()=>{
